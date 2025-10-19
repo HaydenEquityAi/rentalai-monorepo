@@ -21,12 +21,10 @@ logger = logging.getLogger(__name__)
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DATABASE_ECHO,
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=settings.DATABASE_MAX_OVERFLOW,
     pool_pre_ping=True,  # Verify connections before using
     pool_recycle=3600,   # Recycle connections after 1 hour
-    # Use NullPool for serverless (Railway, etc.)
-    poolclass=NullPool if settings.ENVIRONMENT == "production" else None,
+    # Use NullPool for Railway and other serverless platforms
+    poolclass=NullPool if "railway" in settings.DATABASE_URL.lower() else None,
 )
 
 # Create session factory

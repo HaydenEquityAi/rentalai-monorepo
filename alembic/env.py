@@ -17,8 +17,15 @@ from app.models import Base
 # Alembic Config object
 config = context.config
 
+# Convert database URL to use asyncpg driver
+database_url = str(settings.DATABASE_URL)
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+
 # Set database URL from settings
-config.set_main_option("sqlalchemy.url", settings.database_url_sync)
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging
 if config.config_file_name is not None:
@@ -71,7 +78,7 @@ async def run_async_migrations() -> None:
     with the context.
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.database_url_sync
+    configuration["sqlalchemy.url"] = database_url
     
     connectable = async_engine_from_config(
         configuration,

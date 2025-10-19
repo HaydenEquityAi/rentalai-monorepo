@@ -13,7 +13,8 @@ from app.models import (
     PropertyType, UnitStatus, LeadStatus, LeadSource,
     ApplicationStatus, LeaseStatus, WorkOrderStatus,
     WorkOrderPriority, WorkOrderCategory, PaymentStatus,
-    PaymentMethod, UserRole, SubscriptionTier
+    PaymentMethod, UserRole, SubscriptionTier,
+    MaintenancePriority, MaintenanceStatus
 )
 
 
@@ -422,6 +423,51 @@ class WorkOrderResponse(WorkOrderBase, TimestampSchema):
     assigned_to: Optional[UUID] = None
     scheduled_date: Optional[datetime] = None
     completed_date: Optional[datetime] = None
+
+
+# ============================================================================
+# MAINTENANCE REQUEST SCHEMAS
+# ============================================================================
+
+class MaintenanceRequestBase(BaseSchema):
+    """Base maintenance request schema"""
+    title: str
+    description: str
+    priority: MaintenancePriority
+    status: MaintenanceStatus
+    category: str
+    estimated_cost: Optional[Decimal] = None
+
+
+class MaintenanceRequestCreate(MaintenanceRequestBase):
+    """Create maintenance request"""
+    unit_id: Optional[UUID] = None
+
+
+class MaintenanceRequestUpdate(BaseSchema):
+    """Update maintenance request"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[MaintenancePriority] = None
+    status: Optional[MaintenanceStatus] = None
+    category: Optional[str] = None
+    estimated_cost: Optional[Decimal] = None
+    actual_cost: Optional[Decimal] = None
+    resolution_notes: Optional[str] = None
+
+
+class MaintenanceRequestResponse(MaintenanceRequestBase, TimestampSchema):
+    """Maintenance request response"""
+    id: UUID
+    org_id: UUID
+    unit_id: Optional[UUID] = None
+    reported_by: UUID
+    assigned_to: Optional[UUID] = None
+    vendor_name: Optional[str] = None
+    vendor_contact: Optional[str] = None
+    actual_cost: Optional[Decimal] = None
+    resolution_notes: Optional[str] = None
+    completed_at: Optional[datetime] = None
 
 
 # ============================================================================

@@ -41,7 +41,7 @@ const navigation: NavItem[] = [
   { name: 'Leases', href: '/leases', icon: FileText },
   { name: 'Maintenance', href: '/maintenance', icon: Wrench, badge: 5 },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'AI Tools', href: '/ai', icon: Bot },
+  { name: 'AI Tools', href: '/ai-tools', icon: Bot },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

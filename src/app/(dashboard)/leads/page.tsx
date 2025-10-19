@@ -1,0 +1,668 @@
+'use client';
+
+import { useEffect, useState, useMemo } from 'react';
+import { ColumnDef } from '@tanstack/react-table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DataTable } from '@/components/ui/data-table';
+import { Plus, Users, AlertCircle, Edit, Trash2, MoreHorizontal, Eye, Phone, Mail } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  source: string;
+  status: string;
+  date_added: string;
+  notes?: string;
+}
+
+const LEAD_STATUSES = [
+  { value: 'new', label: 'New' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'qualified', label: 'Qualified' },
+  { value: 'lost', label: 'Lost' },
+];
+
+const LEAD_SOURCES = [
+  { value: 'website', label: 'Website' },
+  { value: 'referral', label: 'Referral' },
+  { value: 'walk_in', label: 'Walk-in' },
+  { value: 'phone', label: 'Phone' },
+  { value: 'email', label: 'Email' },
+];
+
+const STATUS_COLORS = {
+  new: 'info',
+  contacted: 'warning',
+  qualified: 'success',
+  lost: 'destructive',
+} as const;
+
+const SOURCE_COLORS = {
+  website: 'info',
+  referral: 'success',
+  walk_in: 'secondary',
+  phone: 'warning',
+  email: 'info',
+} as const;
+
+export default function LeadsPage() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<Lead[]>([]);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    source: '',
+    status: 'new',
+    notes: '',
+  });
+
+  const API_BASE_URL = 'http://localhost:8000/api/v1';
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const fetchLeads = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/leads/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setLeads(data.items || data || []);
+    } catch (err) {
+      console.error('Failed to load leads:', err);
+      setError('Failed to load leads');
+      setLeads([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      source: '',
+      status: 'new',
+      notes: '',
+    });
+  };
+
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/leads/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          source: formData.source,
+          status: formData.status,
+          notes: formData.notes,
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to create lead');
+      }
+
+      toast.success('Lead created successfully!');
+      setIsCreateModalOpen(false);
+      resetForm();
+      fetchLeads();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create lead');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLead) return;
+
+    setSubmitting(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/leads/${editingLead.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          source: formData.source,
+          status: formData.status,
+          notes: formData.notes,
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to update lead');
+      }
+
+      toast.success('Lead updated successfully!');
+      setIsEditModalOpen(false);
+      setEditingLead(null);
+      resetForm();
+      fetchLeads();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update lead');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteLead = async () => {
+    if (!deletingLeadId) return;
+
+    setSubmitting(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/leads/${deletingLeadId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete lead');
+      }
+
+      toast.success('Lead deleted successfully!');
+      setIsDeleteModalOpen(false);
+      setDeletingLeadId(null);
+      fetchLeads();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete lead');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (lead: Lead) => {
+    setEditingLead(lead);
+    setFormData({
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      source: lead.source,
+      status: lead.status,
+      notes: lead.notes || '',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const openDeleteModal = (leadId: string) => {
+    setDeletingLeadId(leadId);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const totalLeads = leads.length;
+    const newThisMonth = leads.filter(lead => {
+      const leadDate = new Date(lead.date_added);
+      const now = new Date();
+      return leadDate.getMonth() === now.getMonth() && leadDate.getFullYear() === now.getFullYear();
+    }).length;
+    const converted = leads.filter(lead => lead.status === 'qualified').length;
+    const conversionRate = totalLeads > 0 ? ((converted / totalLeads) * 100).toFixed(1) : '0';
+
+    return {
+      totalLeads,
+      newThisMonth,
+      converted,
+      conversionRate,
+    };
+  }, [leads]);
+
+  const LeadForm = ({ onSubmit, submitText }: { onSubmit: (e: React.FormEvent) => void; submitText: string }) => (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="name">Name *</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Enter lead name"
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="email">Email *</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="Enter email address"
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="phone">Phone *</Label>
+          <Input
+            id="phone"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            placeholder="Enter phone number"
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="source">Source *</Label>
+          <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select source" />
+            </SelectTrigger>
+            <SelectContent>
+              {LEAD_SOURCES.map((source) => (
+                <SelectItem key={source.value} value={source.value}>
+                  {source.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {LEAD_STATUSES.map((status) => (
+                <SelectItem key={status.value} value={status.value}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="md:col-span-2">
+          <Label htmlFor="notes">Notes</Label>
+          <Input
+            id="notes"
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            placeholder="Enter any additional notes"
+          />
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => {
+          setIsCreateModalOpen(false);
+          setIsEditModalOpen(false);
+          resetForm();
+        }}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? 'Saving...' : submitText}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+
+  const columns: ColumnDef<Lead>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <div className="font-medium">
+            {row.getValue("name")}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "email",
+        header: "Email",
+        cell: ({ row }) => (
+          <div className="flex items-center">
+            <Mail className="h-4 w-4 mr-2 text-gray-400" />
+            {row.getValue("email")}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "phone",
+        header: "Phone",
+        cell: ({ row }) => (
+          <div className="flex items-center">
+            <Phone className="h-4 w-4 mr-2 text-gray-400" />
+            {row.getValue("phone")}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "source",
+        header: "Source",
+        cell: ({ row }) => {
+          const source = row.getValue("source") as string;
+          const color = SOURCE_COLORS[source as keyof typeof SOURCE_COLORS] || 'default';
+          const label = LEAD_SOURCES.find(s => s.value === source)?.label || source;
+          
+          return (
+            <Badge variant={color as any}>
+              {label}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const status = row.getValue("status") as string;
+          const color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'default';
+          const label = LEAD_STATUSES.find(s => s.value === status)?.label || status;
+          
+          return (
+            <Badge variant={color as any}>
+              {label}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "date_added",
+        header: "Date Added",
+        cell: ({ row }) => {
+          const date = new Date(row.getValue("date_added"));
+          return date.toLocaleDateString();
+        },
+      },
+      {
+        id: "actions",
+        enableHiding: false,
+        cell: ({ row }) => {
+          const lead = row.original;
+
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => openEditModal(lead)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => openDeleteModal(lead.id)}
+                  className="text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+      },
+    ],
+    []
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading leads...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="p-6">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+            <div>
+              <h3 className="text-sm font-medium text-red-800">Error Loading Leads</h3>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-3"
+                onClick={() => fetchLeads()}
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Manage your lead pipeline
+          </p>
+        </div>
+        
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => resetForm()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Lead
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Lead</DialogTitle>
+              <DialogDescription>
+                Add a new lead to your pipeline. Fields marked with * are required.
+              </DialogDescription>
+            </DialogHeader>
+            <LeadForm onSubmit={handleCreateLead} submitText="Create Lead" />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Total Leads</dt>
+                  <dd className="text-2xl font-semibold text-gray-900">{stats.totalLeads}</dd>
+                </dl>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">New This Month</dt>
+                  <dd className="text-2xl font-semibold text-gray-900">{stats.newThisMonth}</dd>
+                </dl>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Converted</dt>
+                  <dd className="text-2xl font-semibold text-gray-900">{stats.converted}</dd>
+                </dl>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Conversion Rate</dt>
+                  <dd className="text-2xl font-semibold text-gray-900">{stats.conversionRate}%</dd>
+                </dl>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={leads}
+        searchKey="leads"
+        onRowSelectionChange={setSelectedRows}
+      />
+
+      {/* Edit Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Lead</DialogTitle>
+            <DialogDescription>
+              Update the lead information. Fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
+          <LeadForm onSubmit={handleEditLead} submitText="Update Lead" />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Lead</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this lead? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteLead} disabled={submitting}>
+              {submitting ? 'Deleting...' : 'Delete Lead'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

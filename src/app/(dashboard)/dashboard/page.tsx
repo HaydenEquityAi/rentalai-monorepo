@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { analyticsAPI, PortfolioMetrics } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Home, TrendingUp, AlertCircle } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -36,7 +36,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Properties"
           value={metrics?.total_properties || 0}
@@ -68,6 +68,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Occupancy Trend</CardTitle>
+            <CardDescription>Monthly occupancy rate over time</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -92,6 +93,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Revenue by Property</CardTitle>
+            <CardDescription>Monthly revenue breakdown by property</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -115,6 +117,7 @@ export default function DashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>Latest updates from your properties</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -142,27 +145,19 @@ export default function DashboardPage() {
 }
 
 function MetricCard({ title, value, icon: Icon, color }: any) {
-  const colors = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-    indigo: 'bg-indigo-500',
-  };
-
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center">
-          <div className={`flex-shrink-0 ${colors[color]} rounded-md p-3`}>
-            <Icon className="h-6 w-6 text-white" />
-          </div>
-          <div className="ml-5 w-0 flex-1">
-            <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
-              <dd className="text-2xl font-semibold text-gray-900">{value}</dd>
-            </dl>
-          </div>
-        </div>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground">
+          {title.toLowerCase().includes('rate') ? 'occupancy rate' : 
+           title.toLowerCase().includes('rent') ? 'monthly revenue' :
+           title.toLowerCase().includes('units') ? 'total units' : 'properties in portfolio'}
+        </p>
       </CardContent>
     </Card>
   );

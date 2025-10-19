@@ -4,7 +4,6 @@ Async SQLAlchemy with connection pooling and dependency injection
 """
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.pool import NullPool
 from typing import AsyncGenerator
 import logging
 
@@ -17,14 +16,17 @@ logger = logging.getLogger(__name__)
 # DATABASE ENGINE
 # ============================================================================
 
+# Convert postgres:// to postgresql+asyncpg://
+database_url = str(settings.DATABASE_URL)
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+
 # Create async engine with connection pooling
 engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.DATABASE_ECHO,
-    pool_pre_ping=True,  # Verify connections before using
-    pool_recycle=3600,   # Recycle connections after 1 hour
-    # Use NullPool for Railway and other serverless platforms
-    poolclass=NullPool if "railway" in settings.DATABASE_URL.lower() else None,
+    database_url,
+    echo=False,
 )
 
 # Create session factory

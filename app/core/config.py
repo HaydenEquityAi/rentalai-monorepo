@@ -4,8 +4,10 @@ Uses Pydantic Settings for type-safe configuration with environment variables
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 from typing import List, Optional
 from functools import lru_cache
+import json
 
 
 class Settings(BaseSettings):
@@ -34,6 +36,18 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
     ]
     ALLOWED_HOSTS: List[str] = ["*"]
+    
+    @field_validator('ALLOWED_ORIGINS', mode='before')
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        if isinstance(v, str):
+            # Try to parse as JSON first
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # Fall back to comma-separated
+                return [origin.strip() for origin in v.split(',')]
+        return v
     
     # ========================================================================
     # DATABASE

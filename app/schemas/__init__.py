@@ -252,6 +252,22 @@ class PropertyDetailResponse(PropertyResponse):
     available_units: int = 0
     occupancy_rate: float = 0.0
     total_monthly_rent: Decimal = Decimal("0")
+    
+    @classmethod
+    def from_property_model(cls, property_model, units_count=0, occupied_units=0, available_units=0, occupancy_rate=0.0, total_monthly_rent=Decimal("0")):
+        """Create PropertyDetailResponse from Property model with additional data"""
+        # Use parent class method for basic conversion
+        base_response = PropertyResponse.from_property_model(property_model)
+        
+        # Create PropertyDetailResponse with additional fields
+        return cls(
+            **base_response.model_dump(),
+            units_count=units_count,
+            occupied_units=occupied_units,
+            available_units=available_units,
+            occupancy_rate=occupancy_rate,
+            total_monthly_rent=total_monthly_rent
+        )
 
 
 # ============================================================================

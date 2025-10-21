@@ -13,7 +13,7 @@ const apiClient = axios.create({
 // Add auth token to requests
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
-  if (token) {
+  if (token && token !== 'null' && token !== 'undefined') {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -104,6 +104,113 @@ export const propertiesAPI = {
   
   delete: async (id: string) => {
     const response = await apiClient.delete(`/properties/${id}`);
+    return response;
+  }
+};
+
+// Leads API
+export const leadsAPI = {
+  list: async () => {
+    const response = await apiClient.get('/leads/');
+    return response;
+  },
+  
+  get: async (id: string) => {
+    const response = await apiClient.get(`/leads/${id}`);
+    return response;
+  },
+  
+  create: async (data: any) => {
+    const response = await apiClient.post('/leads/', data);
+    return response;
+  },
+  
+  update: async (id: string, data: any) => {
+    const response = await apiClient.put(`/leads/${id}`, data);
+    return response;
+  },
+  
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/leads/${id}`);
+    return response;
+  }
+};
+
+// Leases API
+export const leasesAPI = {
+  list: async () => {
+    const response = await apiClient.get('/leases/');
+    return response;
+  },
+  
+  get: async (id: string) => {
+    const response = await apiClient.get(`/leases/${id}`);
+    return response;
+  },
+  
+  create: async (data: any) => {
+    const response = await apiClient.post('/leases/', data);
+    return response;
+  },
+  
+  update: async (id: string, data: any) => {
+    const response = await apiClient.put(`/leases/${id}`, data);
+    return response;
+  },
+  
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/leases/${id}`);
+    return response;
+  }
+};
+
+// Maintenance API
+export const maintenanceAPI = {
+  list: async () => {
+    const response = await apiClient.get('/maintenance/');
+    return response;
+  },
+  
+  get: async (id: string) => {
+    const response = await apiClient.get(`/maintenance/${id}`);
+    return response;
+  },
+  
+  create: async (data: any) => {
+    const response = await apiClient.post('/maintenance/', data);
+    return response;
+  },
+  
+  update: async (id: string, data: any) => {
+    const response = await apiClient.put(`/maintenance/${id}`, data);
+    return response;
+  },
+  
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/maintenance/${id}`);
+    return response;
+  }
+};
+
+// Users API
+export const usersAPI = {
+  getMe: async () => {
+    const response = await apiClient.get('/users/me');
+    return response;
+  },
+  
+  updateMe: async (data: any) => {
+    const response = await apiClient.put('/users/me', data);
+    return response;
+  },
+  
+  updatePassword: async (data: { current_password: string; new_password: string }) => {
+    const response = await apiClient.put('/users/me/password', data);
+    return response;
+  },
+  
+  updateNotifications: async (data: any) => {
+    const response = await apiClient.put('/users/me/notifications', data);
     return response;
   }
 };

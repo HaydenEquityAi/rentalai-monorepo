@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable } from '@/components/ui/data-table';
+import { propertiesAPI } from '@/lib/api';
 import { Plus, Building2, MapPin, AlertCircle, Edit, Trash2, MoreHorizontal, Eye, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -72,8 +73,6 @@ export default function PropertiesPage() {
     description: '',
   });
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-
   useEffect(() => {
     fetchProperties();
   }, []);
@@ -82,19 +81,8 @@ export default function PropertiesPage() {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/properties/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const response = await propertiesAPI.list();
+      const data = response.data;
       // Add status field to properties (mock data for now)
       const propertiesWithStatus = (data.items || data || []).map((property: any) => ({
         ...property,
@@ -129,37 +117,24 @@ export default function PropertiesPage() {
     setSubmitting(true);
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/properties/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zip: formData.zip,
-          property_type: formData.property_type,
-          total_units: parseInt(formData.total_units) || 0,
-          year_built: parseInt(formData.year_built) || new Date().getFullYear(),
-          description: formData.description,
-        })
+      const response = await propertiesAPI.create({
+        name: formData.name,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        property_type: formData.property_type,
+        total_units: parseInt(formData.total_units) || 0,
+        year_built: parseInt(formData.year_built) || new Date().getFullYear(),
+        description: formData.description,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to create property');
-      }
 
       toast.success('Property created successfully!');
       setIsCreateModalOpen(false);
       resetForm();
       fetchProperties();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create property');
+      toast.error(err.response?.data?.detail || 'Failed to create property');
     } finally {
       setSubmitting(false);
     }
@@ -172,30 +147,17 @@ export default function PropertiesPage() {
     setSubmitting(true);
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/properties/${editingProperty.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zip: formData.zip,
-          property_type: formData.property_type,
-          total_units: parseInt(formData.total_units) || 0,
-          year_built: parseInt(formData.year_built) || new Date().getFullYear(),
-          description: formData.description,
-        })
+      const response = await propertiesAPI.update(editingProperty.id, {
+        name: formData.name,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        property_type: formData.property_type,
+        total_units: parseInt(formData.total_units) || 0,
+        year_built: parseInt(formData.year_built) || new Date().getFullYear(),
+        description: formData.description,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to update property');
-      }
 
       toast.success('Property updated successfully!');
       setIsEditModalOpen(false);
@@ -203,7 +165,7 @@ export default function PropertiesPage() {
       resetForm();
       fetchProperties();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update property');
+      toast.error(err.response?.data?.detail || 'Failed to update property');
     } finally {
       setSubmitting(false);
     }
@@ -215,26 +177,14 @@ export default function PropertiesPage() {
     setSubmitting(true);
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/properties/${deletingPropertyId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to delete property');
-      }
+      await propertiesAPI.delete(deletingPropertyId);
 
       toast.success('Property deleted successfully!');
       setIsDeleteModalOpen(false);
       setDeletingPropertyId(null);
       fetchProperties();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete property');
+      toast.error(err.response?.data?.detail || 'Failed to delete property');
     } finally {
       setSubmitting(false);
     }
@@ -246,15 +196,8 @@ export default function PropertiesPage() {
     setSubmitting(true);
 
     try {
-      const token = localStorage.getItem('access_token');
       const deletePromises = selectedRows.map(property =>
-        fetch(`${API_BASE_URL}/properties/${property.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
+        propertiesAPI.delete(property.id)
       );
 
       await Promise.all(deletePromises);

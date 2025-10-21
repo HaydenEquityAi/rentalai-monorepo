@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
+import logging
 
 from app.core.database import get_db
 from app.core.security import get_current_user, get_current_org
@@ -20,6 +21,8 @@ from app.schemas import (
     PropertyResponse, PropertyCreate, PropertyUpdate, PropertyDetailResponse,
     UnitResponse, PaginatedResponse, ErrorResponse
 )
+
+logger = logging.getLogger(__name__)
 
 # Initialize router
 properties_router = APIRouter()
@@ -90,67 +93,109 @@ async def create_property(
 ):
     """Create a new property"""
     
+    logger.info(f"Creating property for org {org_id}, user {current_user.id}")
+    logger.info(f"Property data: {property_data.model_dump()}")
+    
     # Determine owner_id - use provided one or create from current user
     owner_id = property_data.owner_id
     
     if not owner_id:
-        # Create an Owner record from the current user
-        owner = Owner(
-            org_id=org_id,
-            first_name=current_user.first_name,
-            last_name=current_user.last_name,
-            email=current_user.email,
-            phone=current_user.phone
-        )
-        db.add(owner)
-        await db.commit()
-        await db.refresh(owner)
-        owner_id = owner.id
+        logger.info("No owner_id provided, creating Owner from current user")
+        try:
+            # Create an Owner record from the current user
+            owner = Owner(
+                org_id=org_id,
+                first_name=current_user.first_name,
+                last_name=current_user.last_name,
+                email=current_user.email,
+                phone=current_user.phone
+            )
+            logger.info(f"Created Owner object: {owner}")
+            
+            db.add(owner)
+            await db.commit()
+            await db.refresh(owner)
+            
+            logger.info(f"Owner created successfully with ID: {owner.id}")
+            owner_id = owner.id
+            
+        except Exception as e:
+            logger.error(f"Error creating Owner: {e}")
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to create owner: {str(e)}"
+            )
     else:
+        logger.info(f"Using provided owner_id: {owner_id}")
         # Verify provided owner exists and belongs to org
-        result = await db.execute(
-            select(Owner).where(
-                and_(
-                    Owner.id == owner_id,
-                    Owner.org_id == org_id,
-                    Owner.deleted_at.is_(None)
+        try:
+            result = await db.execute(
+                select(Owner).where(
+                    and_(
+                        Owner.id == owner_id,
+                        Owner.org_id == org_id,
+                        Owner.deleted_at.is_(None)
+                    )
                 )
             )
-        )
-        owner = result.scalar_one_or_none()
-        
-        if not owner:
+            owner = result.scalar_one_or_none()
+            
+            if not owner:
+                logger.error(f"Owner {owner_id} not found for org {org_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Owner not found"
+                )
+            
+            logger.info(f"Found existing owner: {owner.id}")
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error finding owner: {e}")
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Owner not found"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to find owner: {str(e)}"
             )
     
     # Create property
-    property = Property(
-        org_id=org_id,
-        owner_id=owner_id,
-        name=property_data.name,
-        property_type=property_data.property_type,
-        address=property_data.address,
-        city=property_data.city,
-        state=property_data.state,
-        zip_code=property_data.zip_code,
-        country=property_data.country,
-        year_built=property_data.year_built,
-        total_units=property_data.total_units,
-        square_footage=property_data.square_footage,
-        lot_size=property_data.lot_size,
-        purchase_price=property_data.purchase_price,
-        purchase_date=property_data.purchase_date,
-        market_value=property_data.market_value,
-        photos=property_data.photos or []
-    )
-    
-    db.add(property)
-    await db.commit()
-    await db.refresh(property)
-    
-    return PropertyResponse.model_validate(property)
+    try:
+        logger.info(f"Creating property with owner_id: {owner_id}")
+        property = Property(
+            org_id=org_id,
+            owner_id=owner_id,
+            name=property_data.name,
+            property_type=property_data.property_type,
+            address=property_data.address,
+            city=property_data.city,
+            state=property_data.state,
+            zip_code=property_data.zip_code,
+            country=property_data.country,
+            year_built=property_data.year_built,
+            total_units=property_data.total_units,
+            square_footage=property_data.square_footage,
+            lot_size=property_data.lot_size,
+            purchase_price=property_data.purchase_price,
+            purchase_date=property_data.purchase_date,
+            market_value=property_data.market_value,
+            photos=property_data.photos or []
+        )
+        
+        db.add(property)
+        await db.commit()
+        await db.refresh(property)
+        
+        logger.info(f"Property created successfully with ID: {property.id}")
+        return PropertyResponse.model_validate(property)
+        
+    except Exception as e:
+        logger.error(f"Error creating property: {e}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create property: {str(e)}"
+        )
 
 
 @properties_router.get("/{property_id}", response_model=PropertyDetailResponse)

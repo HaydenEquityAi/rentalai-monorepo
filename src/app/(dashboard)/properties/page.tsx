@@ -61,6 +61,8 @@ export default function PropertiesPage() {
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [selectedRows, setSelectedRows] = useState<Property[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [userLoading, setUserLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -80,35 +82,40 @@ export default function PropertiesPage() {
   }, []);
 
   useEffect(() => {
-    // Get current user ID from localStorage or auth context
-    const getCurrentUserId = () => {
+    // Fetch current user data from API
+    const fetchCurrentUser = async () => {
       try {
-        // Try to get user data from localStorage
-        const userData = localStorage.getItem('user_data');
-        if (userData) {
-          const user = JSON.parse(userData);
-          return user.id || user.user_id;
-        }
-        
-        // Fallback: try to get from token payload (if available)
+        setUserLoading(true);
         const token = localStorage.getItem('access_token');
-        if (token) {
-          // For now, we'll use a placeholder. In a real app, you'd decode the JWT
-          // or make an API call to get the current user's ID
-          return 'current-user-id'; // This should be replaced with actual user ID
-        }
         
-        return null;
-      } catch (error) {
-        console.error('Error getting current user ID:', error);
-        return null;
+        if (!token) {
+          console.error('No access token found');
+          setUserLoading(false);
+          return;
+        }
+
+        const response = await fetch('https://api.rentalai.ai/api/v1/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const userData = await response.json();
+        setCurrentUserId(userData.id);
+      } catch (err) {
+        console.error('Failed to get user:', err);
+        toast.error('Failed to load user data. Please refresh the page.');
+      } finally {
+        setUserLoading(false);
       }
     };
 
-    const userId = getCurrentUserId();
-    if (userId) {
-      setFormData(prev => ({ ...prev, owner_id: userId }));
-    }
+    fetchCurrentUser();
   }, []);
 
   const fetchProperties = async () => {
@@ -149,10 +156,16 @@ export default function PropertiesPage() {
 
   const handleCreateProperty = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!currentUserId) {
+      toast.error('User ID not available. Please refresh the page and try again.');
+      return;
+    }
+    
     setSubmitting(true);
 
     try {
-      const response = await propertiesAPI.create({
+      const propertyData = {
         name: formData.name,
         address_line1: formData.address_line1,
         city: formData.city,
@@ -162,8 +175,10 @@ export default function PropertiesPage() {
         total_units: parseInt(formData.total_units) || 0,
         year_built: parseInt(formData.year_built) || new Date().getFullYear(),
         description: formData.description,
-        owner_id: formData.owner_id,
-      });
+        owner_id: currentUserId, // Use the fetched user ID
+      };
+
+      const response = await propertiesAPI.create(propertyData);
 
       toast.success('Property created successfully!');
       setIsCreateModalOpen(false);
@@ -180,10 +195,15 @@ export default function PropertiesPage() {
     e.preventDefault();
     if (!editingProperty) return;
 
+    if (!currentUserId) {
+      toast.error('User ID not available. Please refresh the page and try again.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      const response = await propertiesAPI.update(editingProperty.id, {
+      const propertyData = {
         name: formData.name,
         address_line1: formData.address_line1,
         city: formData.city,
@@ -193,8 +213,10 @@ export default function PropertiesPage() {
         total_units: parseInt(formData.total_units) || 0,
         year_built: parseInt(formData.year_built) || new Date().getFullYear(),
         description: formData.description,
-        owner_id: formData.owner_id,
-      });
+        owner_id: currentUserId, // Use the fetched user ID
+      };
+
+      const response = await propertiesAPI.update(editingProperty.id, propertyData);
 
       toast.success('Property updated successfully!');
       setIsEditModalOpen(false);
@@ -455,9 +477,9 @@ export default function PropertiesPage() {
         
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
+            <Button onClick={() => resetForm()} disabled={userLoading}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Property
+              {userLoading ? 'Loading...' : 'Create Property'}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -584,8 +606,8 @@ export default function PropertiesPage() {
                 }}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? 'Saving...' : 'Create Property'}
+                <Button type="submit" disabled={submitting || !currentUserId}>
+                  {submitting ? 'Saving...' : !currentUserId ? 'Loading User...' : 'Create Property'}
                 </Button>
               </DialogFooter>
             </form>
@@ -728,8 +750,8 @@ export default function PropertiesPage() {
               }}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? 'Saving...' : 'Update Property'}
+              <Button type="submit" disabled={submitting || !currentUserId}>
+                {submitting ? 'Saving...' : !currentUserId ? 'Loading User...' : 'Update Property'}
               </Button>
             </DialogFooter>
           </form>

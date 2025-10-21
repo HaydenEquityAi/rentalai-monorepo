@@ -164,8 +164,7 @@ class PropertyBase(BaseSchema):
     """Base property schema"""
     name: str = Field(..., min_length=1, max_length=255)
     property_type: PropertyType
-    address_line1: str
-    address_line2: Optional[str] = None
+    address: str
     city: str
     state: str
     zip_code: str
@@ -197,10 +196,12 @@ class PropertyResponse(PropertyBase, TimestampSchema):
     owner_id: UUID
     year_built: Optional[int] = None
     total_units: int
-    total_sqft: Optional[int] = None
-    description: Optional[str] = None
-    amenities: List[str]
-    is_active: bool
+    square_footage: Optional[float] = None
+    lot_size: Optional[float] = None
+    purchase_price: Optional[Decimal] = None
+    purchase_date: Optional[date] = None
+    market_value: Optional[Decimal] = None
+    photos: List[str] = []
 
 
 class PropertyDetailResponse(PropertyResponse):

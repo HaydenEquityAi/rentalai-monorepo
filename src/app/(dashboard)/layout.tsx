@@ -23,6 +23,7 @@ import {
   Bell,
   Search,
   ChevronDown,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { authAPI } from '@/lib/api';
@@ -133,6 +134,15 @@ export default function DashboardLayout({
             
             {/* Right side */}
             <div className="ml-4 flex items-center md:ml-6 space-x-4">
+              {/* Upgrade Button */}
+              <Link 
+                href="/pricing" 
+                className="hidden md:flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <CreditCard className="h-4 w-4 mr-1" />
+                Upgrade
+              </Link>
+              
               {/* Notifications */}
               <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 relative">
                 <Bell className="h-6 w-6" />
@@ -213,6 +223,17 @@ function Sidebar({ pathname }: { pathname: string }) {
           );
         })}
       </nav>
+
+      {/* Upgrade section */}
+      <div className="flex-shrink-0 px-4 py-3 border-t border-gray-200">
+        <Link
+          href="/pricing"
+          className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+        >
+          <CreditCard className="mr-3 h-5 w-5" />
+          Upgrade Plan
+        </Link>
+      </div>
 
       {/* User section */}
       <div className="flex-shrink-0 flex border-t border-gray-200 p-4">

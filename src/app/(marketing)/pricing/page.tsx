@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Star, Zap, Crown, Building2, Users, BarChart3, HeadphonesIcon, Smartphone, Code, Palette, Wrench, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
+import { billingAPI } from '@/lib/billing';
 
 interface PricingPlan {
   id: 'starter' | 'growth' | 'professional';
@@ -73,29 +75,42 @@ const pricingPlans: PricingPlan[] = [
 
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('access_token');
+    setIsLoggedIn(!!token && token !== 'null' && token !== 'undefined');
+  }, []);
 
   const handleGetStarted = async (planId: string) => {
     setLoading(planId);
     
     try {
-      const response = await fetch('/api/v1/billing/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({ plan: planId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+      // Check if user is logged in
+      const token = localStorage.getItem('access_token');
+      const isAuthenticated = token && token !== 'null' && token !== 'undefined';
+      
+      if (!isAuthenticated) {
+        // Redirect to register page if not logged in
+        router.push('/register');
+        return;
       }
 
-      const { url } = await response.json();
+      // User is logged in, proceed with checkout
+      const { url } = await billingAPI.createCheckoutSession(planId as 'starter' | 'growth' | 'professional');
       window.location.href = url;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating checkout session:', error);
-      toast.error('Failed to start checkout process. Please try again.');
+      
+      // If it's an authentication error, redirect to login
+      if (error.response?.status === 401) {
+        toast.error('Please sign in to continue');
+        router.push('/login');
+      } else {
+        toast.error('Failed to start checkout process. Please try again.');
+      }
     } finally {
       setLoading(null);
     }
@@ -203,7 +218,7 @@ export default function PricingPage() {
                         Processing...
                       </div>
                     ) : (
-                      plan.buttonText
+                      isLoggedIn === false ? 'Sign Up to Start' : plan.buttonText
                     )}
                   </Button>
                 </CardContent>

@@ -169,6 +169,7 @@ class Organization(Base):
     properties: Mapped[List["Property"]] = relationship("Property", back_populates="organization")
     owners: Mapped[List["Owner"]] = relationship("Owner", back_populates="organization")
     leads: Mapped[List["Lead"]] = relationship("Lead", back_populates="organization")
+    subscription: Mapped[Optional["Subscription"]] = relationship("Subscription", back_populates="organization", uselist=False)
     
     __table_args__ = (
         Index("idx_org_slug", "slug"),
@@ -585,3 +586,7 @@ class AIJob(Base):
         Index("idx_aijob_status", "status"),
         Index("idx_aijob_type", "job_type"),
     )
+
+
+# Import Subscription model
+from app.models.subscription import Subscription, SubscriptionPlan, SubscriptionStatus

@@ -133,6 +133,14 @@ class Settings(BaseSettings):
     STRIPE_PUBLISHABLE_KEY: Optional[str] = None
     STRIPE_WEBHOOK_SECRET: Optional[str] = None
     
+    # Stripe Price IDs
+    STRIPE_STARTER_BASE: str = "price_1SKUqCBJWNGwi3LbBdC2KXMb"
+    STRIPE_STARTER_USAGE: str = "price_1SKUqpBJWNGwi3LbmBbBYG4j"
+    STRIPE_GROWTH_BASE: str = "price_1SKUuSBJWNGwi3Lb7cU0rJXi"
+    STRIPE_GROWTH_USAGE: str = "price_1SKUy1BJWNGwi3Lb4mifDko6"
+    STRIPE_PROFESSIONAL_BASE: str = "price_1SKV0iBJWNGwi3LbJ8ZpdLK3"
+    STRIPE_PROFESSIONAL_USAGE: str = "price_1SKV2dBJWNGwi3LbWJRwZxR2"
+    
     # DocuSign (E-Signature)
     DOCUSIGN_INTEGRATION_KEY: Optional[str] = None
     DOCUSIGN_USER_ID: Optional[str] = None

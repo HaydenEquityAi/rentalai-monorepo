@@ -1,15 +1,16 @@
 """
-Stripe Integration Service
-app/services/stripe_service.py
+Stripe Service
+Handles all Stripe operations for subscriptions and billing
 """
 
 import stripe
-from decimal import Decimal
-from typing import Dict, Any, Optional
+from typing import Optional, Dict, Any
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 import logging
 
 from app.core.config import settings
-from app.models import Organization, Lease, Payment
+from app.models import Organization, Subscription, SubscriptionPlan, SubscriptionStatus
 
 logger = logging.getLogger(__name__)
 
@@ -18,288 +19,321 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 class StripeService:
-    """Handle all Stripe payment operations"""
-    
-    # ========================================================================
-    # CUSTOMER MANAGEMENT
-    # ========================================================================
+    """Service for handling Stripe operations"""
     
     @staticmethod
-    async def create_customer(
-        org: Organization,
-        email: str,
-        name: str,
-    ) -> str:
-        """Create Stripe customer"""
+    async def create_customer(email: str, name: str, org_id: str, db: AsyncSession) -> Dict[str, Any]:
+        """Create a Stripe customer"""
         try:
             customer = stripe.Customer.create(
                 email=email,
                 name=name,
-                metadata={"org_id": str(org.id)},
-            )
-            logger.info(f"Created Stripe customer {customer.id} for org {org.id}")
-            return customer.id
-        
-        except stripe.error.StripeError as e:
-            logger.error(f"Stripe error creating customer: {e}")
-            raise
-    
-    @staticmethod
-    async def get_or_create_customer(org: Organization, email: str, name: str) -> str:
-        """Get existing customer or create new one"""
-        if org.stripe_customer_id:
-            return org.stripe_customer_id
-        
-        return await StripeService.create_customer(org, email, name)
-    
-    # ========================================================================
-    # SUBSCRIPTION MANAGEMENT
-    # ========================================================================
-    
-    @staticmethod
-    async def create_subscription(
-        customer_id: str,
-        price_id: str,
-        trial_days: int = 14,
-    ) -> Dict[str, Any]:
-        """Create subscription for customer"""
-        try:
-            subscription = stripe.Subscription.create(
-                customer=customer_id,
-                items=[{"price": price_id}],
-                trial_period_days=trial_days,
-                payment_behavior="default_incomplete",
-                payment_settings={"save_default_payment_method": "on_subscription"},
-                expand=["latest_invoice.payment_intent"],
+                metadata={
+                    "org_id": org_id,
+                    "source": "rentalai"
+                }
             )
             
+            # Update organization with Stripe customer ID
+            result = await db.execute(
+                select(Organization).where(Organization.id == org_id)
+            )
+            org = result.scalar_one_or_none()
+            if org:
+                org.stripe_customer_id = customer.id
+                await db.commit()
+            
+            logger.info(f"Created Stripe customer {customer.id} for org {org_id}")
+            return {
+                "customer_id": customer.id,
+                "email": customer.email,
+                "name": customer.name
+            }
+            
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error creating customer: {e}")
+            raise Exception(f"Failed to create customer: {str(e)}")
+    
+    @staticmethod
+    async def create_checkout_session(org_id: str, plan: SubscriptionPlan, db: AsyncSession) -> Dict[str, Any]:
+        """Create a Stripe checkout session for subscription"""
+        try:
+            # Get organization
+            result = await db.execute(
+                select(Organization).where(Organization.id == org_id)
+            )
+            org = result.scalar_one_or_none()
+            if not org:
+                raise Exception("Organization not found")
+            
+            # Ensure customer exists
+            if not org.stripe_customer_id:
+                # Create customer first
+                await StripeService.create_customer(
+                    email=org.users[0].email if org.users else "admin@rentalai.com",
+                    name=org.name,
+                    org_id=org_id,
+                    db=db
+                )
+                # Refresh org
+                await db.refresh(org)
+            
+            # Get price ID based on plan
+            price_id = StripeService._get_price_id(plan)
+            
+            # Create checkout session
+            session = stripe.checkout.Session.create(
+                customer=org.stripe_customer_id,
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': price_id,
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url=f"{settings.FRONTEND_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{settings.FRONTEND_URL}/billing/cancel",
+                metadata={
+                    "org_id": org_id,
+                    "plan": plan.value
+                }
+            )
+            
+            logger.info(f"Created checkout session {session.id} for org {org_id}")
+            return {
+                "session_id": session.id,
+                "url": session.url,
+                "plan": plan.value
+            }
+            
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error creating checkout session: {e}")
+            raise Exception(f"Failed to create checkout session: {str(e)}")
+    
+    @staticmethod
+    async def create_customer_portal_session(customer_id: str) -> Dict[str, Any]:
+        """Create a customer portal session"""
+        try:
+            session = stripe.billing_portal.Session.create(
+                customer=customer_id,
+                return_url=f"{settings.FRONTEND_URL}/billing"
+            )
+            
+            logger.info(f"Created portal session for customer {customer_id}")
+            return {
+                "url": session.url
+            }
+            
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error creating portal session: {e}")
+            raise Exception(f"Failed to create portal session: {str(e)}")
+    
+    @staticmethod
+    async def report_usage(subscription_item_id: str, quantity: int) -> Dict[str, Any]:
+        """Report usage for metered billing"""
+        try:
+            usage_record = stripe.UsageRecord.create(
+                subscription_item=subscription_item_id,
+                quantity=quantity,
+                timestamp='now'
+            )
+            
+            logger.info(f"Reported usage {quantity} for subscription item {subscription_item_id}")
+            return {
+                "usage_record_id": usage_record.id,
+                "quantity": quantity,
+                "timestamp": usage_record.timestamp
+            }
+            
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error reporting usage: {e}")
+            raise Exception(f"Failed to report usage: {str(e)}")
+    
+    @staticmethod
+    async def cancel_subscription(subscription_id: str) -> Dict[str, Any]:
+        """Cancel a subscription"""
+        try:
+            subscription = stripe.Subscription.modify(
+                subscription_id,
+                cancel_at_period_end=True
+            )
+            
+            logger.info(f"Cancelled subscription {subscription_id}")
             return {
                 "subscription_id": subscription.id,
-                "client_secret": subscription.latest_invoice.payment_intent.client_secret,
                 "status": subscription.status,
+                "cancel_at_period_end": subscription.cancel_at_period_end,
+                "current_period_end": subscription.current_period_end
             }
-        
+            
         except stripe.error.StripeError as e:
-            logger.error(f"Stripe error creating subscription: {e}")
-            raise
+            logger.error(f"Stripe error cancelling subscription: {e}")
+            raise Exception(f"Failed to cancel subscription: {str(e)}")
     
     @staticmethod
-    async def cancel_subscription(subscription_id: str) -> bool:
-        """Cancel subscription"""
-        try:
-            stripe.Subscription.delete(subscription_id)
-            logger.info(f"Canceled subscription {subscription_id}")
-            return True
-        
-        except stripe.error.StripeError as e:
-            logger.error(f"Stripe error canceling subscription: {e}")
-            return False
-    
-    @staticmethod
-    async def update_subscription(
-        subscription_id: str,
-        price_id: str,
-    ) -> Dict[str, Any]:
-        """Update subscription (change plan)"""
+    async def get_subscription(subscription_id: str) -> Dict[str, Any]:
+        """Get subscription details"""
         try:
             subscription = stripe.Subscription.retrieve(subscription_id)
             
-            updated = stripe.Subscription.modify(
-                subscription_id,
-                items=[{
-                    "id": subscription["items"]["data"][0].id,
-                    "price": price_id,
-                }],
-                proration_behavior="create_prorations",
-            )
-            
             return {
-                "subscription_id": updated.id,
-                "status": updated.status,
+                "id": subscription.id,
+                "status": subscription.status,
+                "current_period_start": subscription.current_period_start,
+                "current_period_end": subscription.current_period_end,
+                "cancel_at_period_end": subscription.cancel_at_period_end,
+                "items": [
+                    {
+                        "id": item.id,
+                        "price_id": item.price.id,
+                        "quantity": item.quantity
+                    }
+                    for item in subscription.items.data
+                ]
             }
-        
+            
         except stripe.error.StripeError as e:
-            logger.error(f"Stripe error updating subscription: {e}")
-            raise
-    
-    # ========================================================================
-    # PAYMENT INTENT (ONE-TIME PAYMENTS)
-    # ========================================================================
+            logger.error(f"Stripe error getting subscription: {e}")
+            raise Exception(f"Failed to get subscription: {str(e)}")
     
     @staticmethod
-    async def create_payment_intent(
-        amount: Decimal,
-        currency: str = "usd",
-        customer_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        """Create payment intent for one-time payment"""
+    def _get_price_id(plan: SubscriptionPlan) -> str:
+        """Get Stripe price ID for plan"""
+        price_map = {
+            SubscriptionPlan.STARTER: settings.STRIPE_STARTER_BASE,
+            SubscriptionPlan.GROWTH: settings.STRIPE_GROWTH_BASE,
+            SubscriptionPlan.PROFESSIONAL: settings.STRIPE_PROFESSIONAL_BASE,
+        }
+        return price_map[plan]
+    
+    @staticmethod
+    def _get_usage_price_id(plan: SubscriptionPlan) -> str:
+        """Get Stripe usage price ID for plan"""
+        price_map = {
+            SubscriptionPlan.STARTER: settings.STRIPE_STARTER_USAGE,
+            SubscriptionPlan.GROWTH: settings.STRIPE_GROWTH_USAGE,
+            SubscriptionPlan.PROFESSIONAL: settings.STRIPE_PROFESSIONAL_USAGE,
+        }
+        return price_map[plan]
+    
+    @staticmethod
+    async def handle_webhook(event: Dict[str, Any], db: AsyncSession) -> None:
+        """Handle Stripe webhook events"""
         try:
-            # Convert to cents
-            amount_cents = int(amount * 100)
+            event_type = event['type']
             
-            intent = stripe.PaymentIntent.create(
-                amount=amount_cents,
-                currency=currency,
-                customer=customer_id,
-                metadata=metadata or {},
-                automatic_payment_methods={"enabled": True},
+            if event_type == 'checkout.session.completed':
+                await StripeService._handle_checkout_completed(event, db)
+            elif event_type == 'customer.subscription.created':
+                await StripeService._handle_subscription_created(event, db)
+            elif event_type == 'customer.subscription.updated':
+                await StripeService._handle_subscription_updated(event, db)
+            elif event_type == 'customer.subscription.deleted':
+                await StripeService._handle_subscription_deleted(event, db)
+            elif event_type == 'invoice.payment_succeeded':
+                await StripeService._handle_payment_succeeded(event, db)
+            elif event_type == 'invoice.payment_failed':
+                await StripeService._handle_payment_failed(event, db)
+            
+            logger.info(f"Processed webhook event: {event_type}")
+            
+        except Exception as e:
+            logger.error(f"Error handling webhook: {e}")
+            raise
+    
+    @staticmethod
+    async def _handle_checkout_completed(event: Dict[str, Any], db: AsyncSession) -> None:
+        """Handle checkout session completed"""
+        session = event['data']['object']
+        org_id = session['metadata']['org_id']
+        
+        # Update organization with subscription ID
+        result = await db.execute(
+            select(Organization).where(Organization.id == org_id)
+        )
+        org = result.scalar_one_or_none()
+        if org:
+            org.stripe_subscription_id = session['subscription']
+            await db.commit()
+    
+    @staticmethod
+    async def _handle_subscription_created(event: Dict[str, Any], db: AsyncSession) -> None:
+        """Handle subscription created"""
+        subscription = event['data']['object']
+        customer_id = subscription['customer']
+        
+        # Get organization by customer ID
+        result = await db.execute(
+            select(Organization).where(Organization.stripe_customer_id == customer_id)
+        )
+        org = result.scalar_one_or_none()
+        if org:
+            # Create subscription record
+            subscription_record = Subscription(
+                org_id=str(org.id),
+                stripe_customer_id=customer_id,
+                stripe_subscription_id=subscription['id'],
+                plan=SubscriptionPlan.STARTER,  # Default, will be updated
+                status=SubscriptionStatus.ACTIVE,
+                current_period_end=subscription['current_period_end']
             )
-            
-            return {
-                "payment_intent_id": intent.id,
-                "client_secret": intent.client_secret,
-                "status": intent.status,
-            }
-        
-        except stripe.error.StripeError as e:
-            logger.error(f"Stripe error creating payment intent: {e}")
-            raise
+            db.add(subscription_record)
+            await db.commit()
     
     @staticmethod
-    async def capture_payment_intent(payment_intent_id: str) -> bool:
-        """Manually capture a payment intent"""
-        try:
-            stripe.PaymentIntent.capture(payment_intent_id)
-            logger.info(f"Captured payment intent {payment_intent_id}")
-            return True
+    async def _handle_subscription_updated(event: Dict[str, Any], db: AsyncSession) -> None:
+        """Handle subscription updated"""
+        subscription = event['data']['object']
         
-        except stripe.error.StripeError as e:
-            logger.error(f"Stripe error capturing payment: {e}")
-            return False
-    
-    # ========================================================================
-    # RENT PAYMENT
-    # ========================================================================
-    
-    @staticmethod
-    async def charge_rent(
-        lease: Lease,
-        payment: Payment,
-        payment_method_id: str,
-    ) -> Dict[str, Any]:
-        """Charge rent payment"""
-        try:
-            # Create payment intent
-            intent = stripe.PaymentIntent.create(
-                amount=int(payment.amount * 100),
-                currency="usd",
-                customer=lease.stripe_customer_id,
-                payment_method=payment_method_id,
-                off_session=True,
-                confirm=True,
-                metadata={
-                    "lease_id": str(lease.id),
-                    "payment_id": str(payment.id),
-                },
-            )
-            
-            return {
-                "payment_intent_id": intent.id,
-                "status": intent.status,
-            }
-        
-        except stripe.error.CardError as e:
-            logger.error(f"Card error: {e}")
-            return {"error": str(e)}
-        
-        except stripe.error.StripeError as e:
-            logger.error(f"Stripe error: {e}")
-            raise
-    
-    # ========================================================================
-    # WEBHOOKS
-    # ========================================================================
+        # Update subscription record
+        result = await db.execute(
+            select(Subscription).where(Subscription.stripe_subscription_id == subscription['id'])
+        )
+        sub = result.scalar_one_or_none()
+        if sub:
+            sub.status = SubscriptionStatus(subscription['status'])
+            sub.current_period_end = subscription['current_period_end']
+            await db.commit()
     
     @staticmethod
-    async def handle_webhook(payload: bytes, sig_header: str) -> Dict[str, Any]:
-        """Process Stripe webhook events"""
-        try:
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
-            )
-            
-            # Handle different event types
-            if event.type == "payment_intent.succeeded":
-                return await StripeService._handle_payment_succeeded(event.data.object)
-            
-            elif event.type == "payment_intent.payment_failed":
-                return await StripeService._handle_payment_failed(event.data.object)
-            
-            elif event.type == "customer.subscription.created":
-                return await StripeService._handle_subscription_created(event.data.object)
-            
-            elif event.type == "customer.subscription.updated":
-                return await StripeService._handle_subscription_updated(event.data.object)
-            
-            elif event.type == "customer.subscription.deleted":
-                return await StripeService._handle_subscription_deleted(event.data.object)
-            
-            elif event.type == "invoice.paid":
-                return await StripeService._handle_invoice_paid(event.data.object)
-            
-            elif event.type == "invoice.payment_failed":
-                return await StripeService._handle_invoice_failed(event.data.object)
-            
-            return {"status": "unhandled"}
+    async def _handle_subscription_deleted(event: Dict[str, Any], db: AsyncSession) -> None:
+        """Handle subscription deleted"""
+        subscription = event['data']['object']
         
-        except ValueError as e:
-            logger.error(f"Invalid payload: {e}")
-            raise
-        
-        except stripe.error.SignatureVerificationError as e:
-            logger.error(f"Invalid signature: {e}")
-            raise
+        # Update subscription record
+        result = await db.execute(
+            select(Subscription).where(Subscription.stripe_subscription_id == subscription['id'])
+        )
+        sub = result.scalar_one_or_none()
+        if sub:
+            sub.status = SubscriptionStatus.CANCELED
+            await db.commit()
     
     @staticmethod
-    async def _handle_payment_succeeded(payment_intent: Dict) -> Dict[str, Any]:
+    async def _handle_payment_succeeded(event: Dict[str, Any], db: AsyncSession) -> None:
         """Handle successful payment"""
-        payment_id = payment_intent.metadata.get("payment_id")
+        invoice = event['data']['object']
+        subscription_id = invoice['subscription']
         
-        if payment_id:
-            logger.info(f"Payment {payment_id} succeeded")
-            # Update payment status in database here
-        
-        return {"status": "handled"}
+        # Update subscription status
+        result = await db.execute(
+            select(Subscription).where(Subscription.stripe_subscription_id == subscription_id)
+        )
+        sub = result.scalar_one_or_none()
+        if sub:
+            sub.status = SubscriptionStatus.ACTIVE
+            await db.commit()
     
     @staticmethod
-    async def _handle_payment_failed(payment_intent: Dict) -> Dict[str, Any]:
+    async def _handle_payment_failed(event: Dict[str, Any], db: AsyncSession) -> None:
         """Handle failed payment"""
-        payment_id = payment_intent.metadata.get("payment_id")
+        invoice = event['data']['object']
+        subscription_id = invoice['subscription']
         
-        if payment_id:
-            logger.error(f"Payment {payment_id} failed")
-            # Update payment status, send notification
-        
-        return {"status": "handled"}
-    
-    @staticmethod
-    async def _handle_subscription_created(subscription: Dict) -> Dict[str, Any]:
-        """Handle subscription creation"""
-        customer_id = subscription.get("customer")
-        logger.info(f"Subscription created for customer {customer_id}")
-        return {"status": "handled"}
-    
-    @staticmethod
-    async def _handle_subscription_updated(subscription: Dict) -> Dict[str, Any]:
-        """Handle subscription update"""
-        logger.info(f"Subscription {subscription.id} updated")
-        return {"status": "handled"}
-    
-    @staticmethod
-    async def _handle_subscription_deleted(subscription: Dict) -> Dict[str, Any]:
-        """Handle subscription cancellation"""
-        logger.info(f"Subscription {subscription.id} deleted")
-        return {"status": "handled"}
-    
-    @staticmethod
-    async def _handle_invoice_paid(invoice: Dict) -> Dict[str, Any]:
-        """Handle paid invoice"""
-        logger.info(f"Invoice {invoice.id} paid")
-        return {"status": "handled"}
-    
-    @staticmethod
-    async def _handle_invoice_failed(invoice: Dict) -> Dict[str, Any]:
-        """Handle failed invoice"""
-        logger.error(f"Invoice {invoice.id} payment failed")
-        return {"status": "handled"}
+        # Update subscription status
+        result = await db.execute(
+            select(Subscription).where(Subscription.stripe_subscription_id == subscription_id)
+        )
+        sub = result.scalar_one_or_none()
+        if sub:
+            sub.status = SubscriptionStatus.PAST_DUE
+            await db.commit()

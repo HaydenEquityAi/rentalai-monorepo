@@ -294,137 +294,6 @@ export default function LeasesPage() {
     };
   }, [leases]);
 
-  const LeaseForm = ({ onSubmit, submitText }: { onSubmit: (e: React.FormEvent) => void; submitText: string }) => (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="property_id">Property *</Label>
-          <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select property" />
-            </SelectTrigger>
-            <SelectContent>
-              {properties.map((property) => (
-                <SelectItem key={property.id} value={property.id}>
-                  {property.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="unit_number">Unit Number *</Label>
-          <Input
-            id="unit_number"
-            value={formData.unit_number}
-            onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
-            placeholder="Enter unit number"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="tenant_name">Tenant Name *</Label>
-          <Input
-            id="tenant_name"
-            value={formData.tenant_name}
-            onChange={(e) => setFormData({ ...formData, tenant_name: e.target.value })}
-            placeholder="Enter tenant name"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="start_date">Start Date *</Label>
-          <Input
-            id="start_date"
-            type="date"
-            value={formData.start_date}
-            onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="end_date">End Date *</Label>
-          <Input
-            id="end_date"
-            type="date"
-            value={formData.end_date}
-            onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="monthly_rent">Monthly Rent *</Label>
-          <Input
-            id="monthly_rent"
-            type="number"
-            value={formData.monthly_rent}
-            onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
-            placeholder="Enter monthly rent"
-            min="0"
-            step="0.01"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="security_deposit">Security Deposit</Label>
-          <Input
-            id="security_deposit"
-            type="number"
-            value={formData.security_deposit}
-            onChange={(e) => setFormData({ ...formData, security_deposit: e.target.value })}
-            placeholder="Enter security deposit"
-            min="0"
-            step="0.01"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="status">Status</Label>
-          <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              {LEASE_STATUSES.map((status) => (
-                <SelectItem key={status.value} value={status.value}>
-                  {status.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="md:col-span-2">
-          <Label htmlFor="notes">Notes</Label>
-          <Input
-            id="notes"
-            value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            placeholder="Enter any additional notes"
-          />
-        </div>
-      </div>
-
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => {
-          setIsCreateModalOpen(false);
-          setIsEditModalOpen(false);
-          resetForm();
-        }}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? 'Saving...' : submitText}
-        </Button>
-      </DialogFooter>
-    </form>
-  );
 
   const columns: ColumnDef<Lease>[] = useMemo(
     () => [
@@ -615,7 +484,134 @@ export default function LeasesPage() {
                 Add a new lease agreement. Fields marked with * are required.
               </DialogDescription>
             </DialogHeader>
-            <LeaseForm onSubmit={handleCreateLease} submitText="Create Lease" />
+            <form onSubmit={handleCreateLease} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="create-property_id">Property *</Label>
+                  <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select property" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {properties.map((property) => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="create-unit_number">Unit Number *</Label>
+                  <Input
+                    id="create-unit_number"
+                    value={formData.unit_number}
+                    onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
+                    placeholder="Enter unit number"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-tenant_name">Tenant Name *</Label>
+                  <Input
+                    id="create-tenant_name"
+                    value={formData.tenant_name}
+                    onChange={(e) => setFormData({ ...formData, tenant_name: e.target.value })}
+                    placeholder="Enter tenant name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-start_date">Start Date *</Label>
+                  <Input
+                    id="create-start_date"
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-end_date">End Date *</Label>
+                  <Input
+                    id="create-end_date"
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-monthly_rent">Monthly Rent *</Label>
+                  <Input
+                    id="create-monthly_rent"
+                    type="number"
+                    value={formData.monthly_rent}
+                    onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
+                    placeholder="Enter monthly rent"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-security_deposit">Security Deposit</Label>
+                  <Input
+                    id="create-security_deposit"
+                    type="number"
+                    value={formData.security_deposit}
+                    onChange={(e) => setFormData({ ...formData, security_deposit: e.target.value })}
+                    placeholder="Enter security deposit"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-status">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LEASE_STATUSES.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="create-notes">Notes</Label>
+                  <Input
+                    id="create-notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Enter any additional notes"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsCreateModalOpen(false);
+                  resetForm();
+                }}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? 'Saving...' : 'Create Lease'}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -703,7 +699,135 @@ export default function LeasesPage() {
               Update the lease information. Fields marked with * are required.
             </DialogDescription>
           </DialogHeader>
-          <LeaseForm onSubmit={handleEditLease} submitText="Update Lease" />
+          <form onSubmit={handleEditLease} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-property_id">Property *</Label>
+                <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select property" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {properties.map((property) => (
+                      <SelectItem key={property.id} value={property.id}>
+                        {property.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-unit_number">Unit Number *</Label>
+                <Input
+                  id="edit-unit_number"
+                  value={formData.unit_number}
+                  onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
+                  placeholder="Enter unit number"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-tenant_name">Tenant Name *</Label>
+                <Input
+                  id="edit-tenant_name"
+                  value={formData.tenant_name}
+                  onChange={(e) => setFormData({ ...formData, tenant_name: e.target.value })}
+                  placeholder="Enter tenant name"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-start_date">Start Date *</Label>
+                <Input
+                  id="edit-start_date"
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-end_date">End Date *</Label>
+                <Input
+                  id="edit-end_date"
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-monthly_rent">Monthly Rent *</Label>
+                <Input
+                  id="edit-monthly_rent"
+                  type="number"
+                  value={formData.monthly_rent}
+                  onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
+                  placeholder="Enter monthly rent"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-security_deposit">Security Deposit</Label>
+                <Input
+                  id="edit-security_deposit"
+                  type="number"
+                  value={formData.security_deposit}
+                  onChange={(e) => setFormData({ ...formData, security_deposit: e.target.value })}
+                  placeholder="Enter security deposit"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-status">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEASE_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-notes">Notes</Label>
+                <Input
+                  id="edit-notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Enter any additional notes"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingLease(null);
+                resetForm();
+              }}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Saving...' : 'Update Lease'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

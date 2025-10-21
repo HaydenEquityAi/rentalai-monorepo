@@ -305,128 +305,6 @@ export default function MaintenancePage() {
     };
   }, [requests]);
 
-  const MaintenanceForm = ({ onSubmit, submitText }: { onSubmit: (e: React.FormEvent) => void; submitText: string }) => (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="property_id">Property *</Label>
-          <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select property" />
-            </SelectTrigger>
-            <SelectContent>
-              {properties.map((property) => (
-                <SelectItem key={property.id} value={property.id}>
-                  {property.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="unit_number">Unit Number</Label>
-          <Input
-            id="unit_number"
-            value={formData.unit_number}
-            onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
-            placeholder="Enter unit number"
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <Label htmlFor="issue_description">Issue Description *</Label>
-          <Textarea
-            id="issue_description"
-            value={formData.issue_description}
-            onChange={(e) => setFormData({ ...formData, issue_description: e.target.value })}
-            placeholder="Describe the maintenance issue"
-            rows={3}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="priority">Priority *</Label>
-          <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select priority" />
-            </SelectTrigger>
-            <SelectContent>
-              {PRIORITIES.map((priority) => (
-                <SelectItem key={priority.value} value={priority.value}>
-                  {priority.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="status">Status</Label>
-          <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUSES.map((status) => (
-                <SelectItem key={status.value} value={status.value}>
-                  {status.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="assigned_to">Assigned To</Label>
-          <Input
-            id="assigned_to"
-            value={formData.assigned_to}
-            onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-            placeholder="Enter assigned person"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="estimated_cost">Estimated Cost</Label>
-          <Input
-            id="estimated_cost"
-            type="number"
-            value={formData.estimated_cost}
-            onChange={(e) => setFormData({ ...formData, estimated_cost: e.target.value })}
-            placeholder="Enter estimated cost"
-            min="0"
-            step="0.01"
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <Label htmlFor="notes">Notes</Label>
-          <Textarea
-            id="notes"
-            value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            placeholder="Enter any additional notes"
-            rows={2}
-          />
-        </div>
-      </div>
-
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => {
-          setIsCreateModalOpen(false);
-          setIsEditModalOpen(false);
-          resetForm();
-        }}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? 'Saving...' : submitText}
-        </Button>
-      </DialogFooter>
-    </form>
-  );
 
   const columns: ColumnDef<MaintenanceRequest>[] = useMemo(
     () => [
@@ -626,7 +504,125 @@ export default function MaintenancePage() {
                 Add a new maintenance request. Fields marked with * are required.
               </DialogDescription>
             </DialogHeader>
-            <MaintenanceForm onSubmit={handleCreateRequest} submitText="Create Request" />
+            <form onSubmit={handleCreateRequest} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="create-property_id">Property *</Label>
+                  <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select property" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {properties.map((property) => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="create-unit_number">Unit Number</Label>
+                  <Input
+                    id="create-unit_number"
+                    value={formData.unit_number}
+                    onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
+                    placeholder="Enter unit number"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="create-issue_description">Issue Description *</Label>
+                  <Textarea
+                    id="create-issue_description"
+                    value={formData.issue_description}
+                    onChange={(e) => setFormData({ ...formData, issue_description: e.target.value })}
+                    placeholder="Describe the maintenance issue"
+                    rows={3}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-priority">Priority *</Label>
+                  <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIORITIES.map((priority) => (
+                        <SelectItem key={priority.value} value={priority.value}>
+                          {priority.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="create-status">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUSES.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="create-assigned_to">Assigned To</Label>
+                  <Input
+                    id="create-assigned_to"
+                    value={formData.assigned_to}
+                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                    placeholder="Enter assigned person"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-estimated_cost">Estimated Cost</Label>
+                  <Input
+                    id="create-estimated_cost"
+                    type="number"
+                    value={formData.estimated_cost}
+                    onChange={(e) => setFormData({ ...formData, estimated_cost: e.target.value })}
+                    placeholder="Enter estimated cost"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="create-notes">Notes</Label>
+                  <Textarea
+                    id="create-notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Enter any additional notes"
+                    rows={2}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsCreateModalOpen(false);
+                  resetForm();
+                }}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? 'Saving...' : 'Create Request'}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -714,7 +710,126 @@ export default function MaintenancePage() {
               Update the maintenance request information. Fields marked with * are required.
             </DialogDescription>
           </DialogHeader>
-          <MaintenanceForm onSubmit={handleEditRequest} submitText="Update Request" />
+          <form onSubmit={handleEditRequest} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-property_id">Property *</Label>
+                <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select property" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {properties.map((property) => (
+                      <SelectItem key={property.id} value={property.id}>
+                        {property.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-unit_number">Unit Number</Label>
+                <Input
+                  id="edit-unit_number"
+                  value={formData.unit_number}
+                  onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
+                  placeholder="Enter unit number"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-issue_description">Issue Description *</Label>
+                <Textarea
+                  id="edit-issue_description"
+                  value={formData.issue_description}
+                  onChange={(e) => setFormData({ ...formData, issue_description: e.target.value })}
+                  placeholder="Describe the maintenance issue"
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-priority">Priority *</Label>
+                <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITIES.map((priority) => (
+                      <SelectItem key={priority.value} value={priority.value}>
+                        {priority.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-status">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-assigned_to">Assigned To</Label>
+                <Input
+                  id="edit-assigned_to"
+                  value={formData.assigned_to}
+                  onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                  placeholder="Enter assigned person"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-estimated_cost">Estimated Cost</Label>
+                <Input
+                  id="edit-estimated_cost"
+                  type="number"
+                  value={formData.estimated_cost}
+                  onChange={(e) => setFormData({ ...formData, estimated_cost: e.target.value })}
+                  placeholder="Enter estimated cost"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-notes">Notes</Label>
+                <Textarea
+                  id="edit-notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Enter any additional notes"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingRequest(null);
+                resetForm();
+              }}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Saving...' : 'Update Request'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

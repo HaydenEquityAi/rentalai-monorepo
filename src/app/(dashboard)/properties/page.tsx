@@ -232,131 +232,6 @@ export default function PropertiesPage() {
     setIsDeleteModalOpen(true);
   };
 
-  const PropertyForm = ({ onSubmit, submitText }: { onSubmit: (e: React.FormEvent) => void; submitText: string }) => (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="md:col-span-2">
-          <Label htmlFor="name">Property Name *</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Enter property name"
-            required
-          />
-        </div>
-        
-        <div className="md:col-span-2">
-          <Label htmlFor="address">Address *</Label>
-          <Input
-            id="address"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            placeholder="Enter street address"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="city">City *</Label>
-          <Input
-            id="city"
-            value={formData.city}
-            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-            placeholder="Enter city"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="state">State *</Label>
-          <Input
-            id="state"
-            value={formData.state}
-            onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-            placeholder="Enter state"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="zip">ZIP Code *</Label>
-          <Input
-            id="zip"
-            value={formData.zip}
-            onChange={(e) => setFormData({ ...formData, zip: e.target.value })}
-            placeholder="Enter ZIP code"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="property_type">Property Type *</Label>
-          <Select value={formData.property_type} onValueChange={(value) => setFormData({ ...formData, property_type: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select property type" />
-            </SelectTrigger>
-            <SelectContent>
-              {PROPERTY_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="total_units">Total Units</Label>
-          <Input
-            id="total_units"
-            type="number"
-            value={formData.total_units}
-            onChange={(e) => setFormData({ ...formData, total_units: e.target.value })}
-            placeholder="Enter number of units"
-            min="0"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="year_built">Year Built</Label>
-          <Input
-            id="year_built"
-            type="number"
-            value={formData.year_built}
-            onChange={(e) => setFormData({ ...formData, year_built: e.target.value })}
-            placeholder="Enter year built"
-            min="1800"
-            max={new Date().getFullYear()}
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Enter property description"
-            rows={3}
-          />
-        </div>
-      </div>
-
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => {
-          setIsCreateModalOpen(false);
-          setIsEditModalOpen(false);
-          resetForm();
-        }}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? 'Saving...' : submitText}
-        </Button>
-      </DialogFooter>
-    </form>
-  );
 
   const columns: ColumnDef<Property>[] = useMemo(
     () => [
@@ -554,7 +429,128 @@ export default function PropertiesPage() {
                 Add a new property to your portfolio. Fields marked with * are required.
               </DialogDescription>
             </DialogHeader>
-            <PropertyForm onSubmit={handleCreateProperty} submitText="Create Property" />
+            <form onSubmit={handleCreateProperty} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="create-name">Property Name *</Label>
+                  <Input
+                    id="create-name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Enter property name"
+                    required
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <Label htmlFor="create-address">Address *</Label>
+                  <Input
+                    id="create-address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="Enter street address"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-city">City *</Label>
+                  <Input
+                    id="create-city"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="Enter city"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-state">State *</Label>
+                  <Input
+                    id="create-state"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    placeholder="Enter state"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-zip">ZIP Code *</Label>
+                  <Input
+                    id="create-zip"
+                    value={formData.zip}
+                    onChange={(e) => setFormData({ ...formData, zip: e.target.value })}
+                    placeholder="Enter ZIP code"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-property_type">Property Type *</Label>
+                  <Select value={formData.property_type} onValueChange={(value) => setFormData({ ...formData, property_type: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select property type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROPERTY_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="create-total_units">Total Units</Label>
+                  <Input
+                    id="create-total_units"
+                    type="number"
+                    value={formData.total_units}
+                    onChange={(e) => setFormData({ ...formData, total_units: e.target.value })}
+                    placeholder="Enter number of units"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-year_built">Year Built</Label>
+                  <Input
+                    id="create-year_built"
+                    type="number"
+                    value={formData.year_built}
+                    onChange={(e) => setFormData({ ...formData, year_built: e.target.value })}
+                    placeholder="Enter year built"
+                    min="1800"
+                    max={new Date().getFullYear()}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="create-description">Description</Label>
+                  <Textarea
+                    id="create-description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Enter property description"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsCreateModalOpen(false);
+                  resetForm();
+                }}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? 'Saving...' : 'Create Property'}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -576,7 +572,129 @@ export default function PropertiesPage() {
               Update the property information. Fields marked with * are required.
             </DialogDescription>
           </DialogHeader>
-          <PropertyForm onSubmit={handleEditProperty} submitText="Update Property" />
+          <form onSubmit={handleEditProperty} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-name">Property Name *</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Enter property name"
+                  required
+                />
+              </div>
+              
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-address">Address *</Label>
+                <Input
+                  id="edit-address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Enter street address"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-city">City *</Label>
+                <Input
+                  id="edit-city"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="Enter city"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-state">State *</Label>
+                <Input
+                  id="edit-state"
+                  value={formData.state}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  placeholder="Enter state"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-zip">ZIP Code *</Label>
+                <Input
+                  id="edit-zip"
+                  value={formData.zip}
+                  onChange={(e) => setFormData({ ...formData, zip: e.target.value })}
+                  placeholder="Enter ZIP code"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-property_type">Property Type *</Label>
+                <Select value={formData.property_type} onValueChange={(value) => setFormData({ ...formData, property_type: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select property type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROPERTY_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-total_units">Total Units</Label>
+                <Input
+                  id="edit-total_units"
+                  type="number"
+                  value={formData.total_units}
+                  onChange={(e) => setFormData({ ...formData, total_units: e.target.value })}
+                  placeholder="Enter number of units"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-year_built">Year Built</Label>
+                <Input
+                  id="edit-year_built"
+                  type="number"
+                  value={formData.year_built}
+                  onChange={(e) => setFormData({ ...formData, year_built: e.target.value })}
+                  placeholder="Enter year built"
+                  min="1800"
+                  max={new Date().getFullYear()}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Enter property description"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingProperty(null);
+                resetForm();
+              }}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Saving...' : 'Update Property'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

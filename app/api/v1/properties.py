@@ -90,28 +90,45 @@ async def create_property(
 ):
     """Create a new property"""
     
-    # Verify owner exists and belongs to org
-    result = await db.execute(
-        select(Owner).where(
-            and_(
-                Owner.id == property_data.owner_id,
-                Owner.org_id == org_id,
-                Owner.deleted_at.is_(None)
+    # Determine owner_id - use provided one or create from current user
+    owner_id = property_data.owner_id
+    
+    if not owner_id:
+        # Create an Owner record from the current user
+        owner = Owner(
+            org_id=org_id,
+            first_name=current_user.first_name,
+            last_name=current_user.last_name,
+            email=current_user.email,
+            phone=current_user.phone
+        )
+        db.add(owner)
+        await db.commit()
+        await db.refresh(owner)
+        owner_id = owner.id
+    else:
+        # Verify provided owner exists and belongs to org
+        result = await db.execute(
+            select(Owner).where(
+                and_(
+                    Owner.id == owner_id,
+                    Owner.org_id == org_id,
+                    Owner.deleted_at.is_(None)
+                )
             )
         )
-    )
-    owner = result.scalar_one_or_none()
-    
-    if not owner:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Owner not found"
-        )
+        owner = result.scalar_one_or_none()
+        
+        if not owner:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Owner not found"
+            )
     
     # Create property
     property = Property(
         org_id=org_id,
-        owner_id=property_data.owner_id,
+        owner_id=owner_id,
         name=property_data.name,
         property_type=property_data.property_type,
         address=property_data.address,

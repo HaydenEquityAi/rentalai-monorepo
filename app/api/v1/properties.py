@@ -167,19 +167,21 @@ async def create_property(
             owner_id=owner_id,
             name=property_data.name,
             property_type=property_data.property_type,
-            address=property_data.address,
+            address=property_data.address_line1,
             city=property_data.city,
             state=property_data.state,
             zip_code=property_data.zip_code,
             country=property_data.country,
             year_built=property_data.year_built,
-            total_units=property_data.total_units,
-            square_footage=property_data.square_footage,
-            lot_size=property_data.lot_size,
-            purchase_price=property_data.purchase_price,
-            purchase_date=property_data.purchase_date,
-            market_value=property_data.market_value,
-            photos=property_data.photos or []
+	    total_units=property_data.total_units or 0,
+	    square_footage=property_data.total_sqft,
+	    lot_size=None,
+	    purchase_price=None,
+	    purchase_date=None,
+	    market_value=None,
+	    photos=[]
+            
+  
         )
         
         db.add(property)

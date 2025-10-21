@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Dict, Any
+from pydantic import BaseModel
 import stripe
 import logging
 
@@ -23,15 +24,28 @@ logger = logging.getLogger(__name__)
 billing_router = APIRouter()
 
 
+class CheckoutSessionRequest(BaseModel):
+    plan: str
+
+
 @billing_router.post("/create-checkout-session")
 async def create_checkout_session(
-    plan: SubscriptionPlan,
+    request: CheckoutSessionRequest,
     org_id: str = Depends(get_current_org),
     current_user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a Stripe checkout session for subscription"""
     try:
+        # Convert string to SubscriptionPlan enum
+        try:
+            plan = SubscriptionPlan(request.plan)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid plan: {request.plan}. Must be one of: {[p.value for p in SubscriptionPlan]}"
+            )
+        
         result = await StripeService.create_checkout_session(org_id, plan, db)
         return {
             "success": True,
@@ -39,6 +53,8 @@ async def create_checkout_session(
             "url": result["url"],
             "plan": result["plan"]
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating checkout session: {e}")
         raise HTTPException(

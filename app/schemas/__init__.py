@@ -164,7 +164,8 @@ class PropertyBase(BaseSchema):
     """Base property schema"""
     name: str = Field(..., min_length=1, max_length=255)
     property_type: PropertyType
-    address: str
+    address_line1: str
+    address_line2: Optional[str] = None
     city: str
     state: str
     zip_code: str
@@ -202,6 +203,46 @@ class PropertyResponse(PropertyBase, TimestampSchema):
     purchase_date: Optional[date] = None
     market_value: Optional[Decimal] = None
     photos: List[str] = []
+    # Address fields for frontend compatibility
+    address: Optional[str] = None  # Combined address from address_line1 + address_line2
+    
+    @classmethod
+    def from_property_model(cls, property_model):
+        """Create PropertyResponse from Property model"""
+        # Split combined address back into address_line1 and address_line2
+        address_line1 = ""
+        address_line2 = None
+        
+        if property_model.address:
+            address_parts = property_model.address.split(", ", 1)
+            address_line1 = address_parts[0]
+            if len(address_parts) > 1:
+                address_line2 = address_parts[1]
+        
+        return cls(
+            id=property_model.id,
+            org_id=property_model.org_id,
+            owner_id=property_model.owner_id,
+            name=property_model.name,
+            property_type=property_model.property_type,
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=property_model.city,
+            state=property_model.state,
+            zip_code=property_model.zip_code,
+            country=property_model.country,
+            year_built=property_model.year_built,
+            total_units=property_model.total_units,
+            square_footage=property_model.square_footage,
+            lot_size=property_model.lot_size,
+            purchase_price=property_model.purchase_price,
+            purchase_date=property_model.purchase_date,
+            market_value=property_model.market_value,
+            photos=property_model.photos or [],
+            address=property_model.address,
+            created_at=property_model.created_at,
+            updated_at=property_model.updated_at
+        )
 
 
 class PropertyDetailResponse(PropertyResponse):

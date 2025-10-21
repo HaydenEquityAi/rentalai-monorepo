@@ -162,26 +162,30 @@ async def create_property(
     # Create property
     try:
         logger.info(f"Creating property with owner_id: {owner_id}")
+        # Combine address fields for database storage
+        address_parts = [property_data.address_line1]
+        if property_data.address_line2:
+            address_parts.append(property_data.address_line2)
+        combined_address = ", ".join(address_parts)
+        
         property = Property(
             org_id=org_id,
             owner_id=owner_id,
             name=property_data.name,
             property_type=property_data.property_type,
-            address=property_data.address_line1,
+            address=combined_address,
             city=property_data.city,
             state=property_data.state,
             zip_code=property_data.zip_code,
             country=property_data.country,
             year_built=property_data.year_built,
-	    total_units=property_data.total_units or 0,
-	    square_footage=property_data.total_sqft,
-	    lot_size=None,
-	    purchase_price=None,
-	    purchase_date=None,
-	    market_value=None,
-	    photos=[]
-            
-  
+            total_units=property_data.total_units,
+            square_footage=property_data.square_footage,
+            lot_size=property_data.lot_size,
+            purchase_price=property_data.purchase_price,
+            purchase_date=property_data.purchase_date,
+            market_value=property_data.market_value,
+            photos=property_data.photos or []
         )
         
         db.add(property)
@@ -189,7 +193,7 @@ async def create_property(
         await db.refresh(property)
         
         logger.info(f"Property created successfully with ID: {property.id}")
-        return PropertyResponse.model_validate(property)
+        return PropertyResponse.from_property_model(property)
         
     except Exception as e:
         logger.error(f"Error creating property: {e}")

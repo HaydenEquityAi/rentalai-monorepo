@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, User, Building2, Bell, Shield } from 'lucide-react';
+import { AlertCircle, User, Building2, Bell, Shield, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
+import SubscriptionCard from '@/components/billing/SubscriptionCard';
 
 interface UserProfile {
   id: string;
@@ -289,7 +290,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile" className="flex items-center">
             <User className="h-4 w-4 mr-2" />
             Profile
@@ -297,6 +298,10 @@ export default function SettingsPage() {
           <TabsTrigger value="organization" className="flex items-center">
             <Building2 className="h-4 w-4 mr-2" />
             Organization
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="flex items-center">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Billing
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center">
             <Bell className="h-4 w-4 mr-2" />
@@ -426,6 +431,26 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Billing Tab */}
+        <TabsContent value="billing" className="space-y-6">
+          <SubscriptionCard />
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Billing History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-4">Your billing history will appear here</p>
+                <Button variant="outline" onClick={() => window.open('/pricing', '_blank')}>
+                  View Pricing Plans
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -136,7 +136,7 @@ export default function DashboardLayout({
             <div className="ml-4 flex items-center md:ml-6 space-x-4">
               {/* Upgrade Button */}
               <Link 
-                href="/pricing" 
+                href="/#pricing" 
                 className="hidden md:flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
               >
                 <CreditCard className="h-4 w-4 mr-1" />
@@ -227,7 +227,7 @@ function Sidebar({ pathname }: { pathname: string }) {
       {/* Upgrade section */}
       <div className="flex-shrink-0 px-4 py-3 border-t border-gray-200">
         <Link
-          href="/pricing"
+          href="/#pricing"
           className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
         >
           <CreditCard className="mr-3 h-5 w-5" />

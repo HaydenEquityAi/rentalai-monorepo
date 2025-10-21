@@ -61,8 +61,6 @@ export default function PropertiesPage() {
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [selectedRows, setSelectedRows] = useState<Property[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
-  const [userLoading, setUserLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -74,48 +72,10 @@ export default function PropertiesPage() {
     total_units: '',
     year_built: '',
     description: '',
-    owner_id: '',
   });
 
   useEffect(() => {
     fetchProperties();
-  }, []);
-
-  useEffect(() => {
-    // Fetch current user data from API
-    const fetchCurrentUser = async () => {
-      try {
-        setUserLoading(true);
-        const token = localStorage.getItem('access_token');
-        
-        if (!token) {
-          console.error('No access token found');
-          setUserLoading(false);
-          return;
-        }
-
-        const response = await fetch('https://api.rentalai.ai/api/v1/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const userData = await response.json();
-        setCurrentUserId(userData.id);
-      } catch (err) {
-        console.error('Failed to get user:', err);
-        toast.error('Failed to load user data. Please refresh the page.');
-      } finally {
-        setUserLoading(false);
-      }
-    };
-
-    fetchCurrentUser();
   }, []);
 
   const fetchProperties = async () => {
@@ -150,17 +110,11 @@ export default function PropertiesPage() {
       total_units: '',
       year_built: '',
       description: '',
-      owner_id: '',
     });
   };
 
   const handleCreateProperty = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!currentUserId) {
-      toast.error('User ID not available. Please refresh the page and try again.');
-      return;
-    }
     
     setSubmitting(true);
 
@@ -175,7 +129,6 @@ export default function PropertiesPage() {
         total_units: parseInt(formData.total_units) || 0,
         year_built: parseInt(formData.year_built) || new Date().getFullYear(),
         description: formData.description,
-        owner_id: currentUserId, // Use the fetched user ID
       };
 
       const response = await propertiesAPI.create(propertyData);
@@ -195,11 +148,6 @@ export default function PropertiesPage() {
     e.preventDefault();
     if (!editingProperty) return;
 
-    if (!currentUserId) {
-      toast.error('User ID not available. Please refresh the page and try again.');
-      return;
-    }
-
     setSubmitting(true);
 
     try {
@@ -213,7 +161,6 @@ export default function PropertiesPage() {
         total_units: parseInt(formData.total_units) || 0,
         year_built: parseInt(formData.year_built) || new Date().getFullYear(),
         description: formData.description,
-        owner_id: currentUserId, // Use the fetched user ID
       };
 
       const response = await propertiesAPI.update(editingProperty.id, propertyData);
@@ -282,7 +229,6 @@ export default function PropertiesPage() {
       total_units: property.total_units.toString(),
       year_built: property.year_built.toString(),
       description: property.description,
-      owner_id: property.owner_id || '',
     });
     setIsEditModalOpen(true);
   };
@@ -477,9 +423,9 @@ export default function PropertiesPage() {
         
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => resetForm()} disabled={userLoading}>
+            <Button onClick={() => resetForm()}>
               <Plus className="h-4 w-4 mr-2" />
-              {userLoading ? 'Loading...' : 'Create Property'}
+              Create Property
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -606,8 +552,8 @@ export default function PropertiesPage() {
                 }}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={submitting || !currentUserId}>
-                  {submitting ? 'Saving...' : !currentUserId ? 'Loading User...' : 'Create Property'}
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? 'Saving...' : 'Create Property'}
                 </Button>
               </DialogFooter>
             </form>
@@ -750,8 +696,8 @@ export default function PropertiesPage() {
               }}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting || !currentUserId}>
-                {submitting ? 'Saving...' : !currentUserId ? 'Loading User...' : 'Update Property'}
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Saving...' : 'Update Property'}
               </Button>
             </DialogFooter>
           </form>

@@ -72,7 +72,7 @@ async def list_properties(
     properties = result.scalars().all()
     
     return PaginatedResponse(
-        items=[PropertyResponse.model_validate(prop) for prop in properties],
+        items=[PropertyResponse.from_property_model(prop) for prop in properties],
         pagination={
             "page": (skip // limit) + 1,
             "page_size": limit,
@@ -233,7 +233,7 @@ async def get_property(
             detail="Property not found"
         )
     
-    return PropertyDetailResponse.model_validate(property)
+    return PropertyDetailResponse.from_property_model(property)
 
 
 @properties_router.put("/{property_id}", response_model=PropertyResponse)
@@ -266,13 +266,25 @@ async def update_property(
     
     # Update fields
     update_data = property_data.model_dump(exclude_unset=True)
+    
+    # Handle address field conversion if present
+    if 'address_line1' in update_data or 'address_line2' in update_data:
+        address_line1 = update_data.pop('address_line1', '')
+        address_line2 = update_data.pop('address_line2', None)
+        
+        # Combine address fields for database storage
+        address_parts = [address_line1] if address_line1 else []
+        if address_line2:
+            address_parts.append(address_line2)
+        update_data['address'] = ", ".join(address_parts)
+    
     for field, value in update_data.items():
         setattr(property, field, value)
     
     await db.commit()
     await db.refresh(property)
     
-    return PropertyResponse.model_validate(property)
+    return PropertyResponse.from_property_model(property)
 
 
 @properties_router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT)

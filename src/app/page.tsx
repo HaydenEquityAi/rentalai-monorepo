@@ -43,7 +43,9 @@ import {
   Phone,
   Globe,
   Lock,
-  CheckCircle
+  CheckCircle,
+  Menu,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { billingAPI } from '@/lib/billing';
@@ -200,6 +202,7 @@ export default function HomePage() {
   const [isAnnual, setIsAnnual] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [showFloatingCTA, setShowFloatingCTA] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -226,6 +229,20 @@ export default function HomePage() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    // Handle body scroll lock when mobile menu is open
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
   const handleGetStarted = async (planId: string) => {
     setLoading(planId);
@@ -283,6 +300,28 @@ export default function HomePage() {
     return isAnnual ? `/year` : `/month`;
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleMobileNavClick = (href: string) => {
+    closeMobileMenu();
+    if (href.startsWith('#')) {
+      // Handle anchor links
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Handle regular navigation
+      router.push(href);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -330,9 +369,101 @@ export default function HomePage() {
                 Get Started
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={toggleMobileMenu}
+                className="text-gray-600 hover:text-gray-900 focus:outline-none focus:text-gray-900 transition-colors"
+                aria-label="Toggle mobile menu"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+            onClick={closeMobileMenu}
+          />
+          
+          {/* Mobile Menu */}
+          <div className="fixed right-0 top-0 h-full w-80 max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex items-center space-x-2">
+                  <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-gray-900">RentalAi</span>
+                </div>
+                <button
+                  onClick={closeMobileMenu}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Close mobile menu"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              {/* Navigation Links */}
+              <nav className="flex-1 px-6 py-6">
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleMobileNavClick('/')}
+                    className="w-full text-left px-4 py-4 text-lg font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors min-h-[44px] flex items-center"
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={() => handleMobileNavClick('/#pricing')}
+                    className="w-full text-left px-4 py-4 text-lg font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors min-h-[44px] flex items-center"
+                  >
+                    Pricing
+                  </button>
+                  <button
+                    onClick={() => handleMobileNavClick('/#features')}
+                    className="w-full text-left px-4 py-4 text-lg font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors min-h-[44px] flex items-center"
+                  >
+                    Features
+                  </button>
+                  <button
+                    onClick={() => handleMobileNavClick('/about')}
+                    className="w-full text-left px-4 py-4 text-lg font-medium text-gray-900 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors min-h-[44px] flex items-center"
+                  >
+                    About
+                  </button>
+                </div>
+              </nav>
+              
+              {/* Auth Buttons */}
+              <div className="p-6 border-t border-gray-200 space-y-3">
+                <Link
+                  href="/login"
+                  onClick={closeMobileMenu}
+                  className="block w-full text-center px-4 py-3 text-gray-600 hover:text-gray-900 transition-colors font-medium"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={closeMobileMenu}
+                  className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">

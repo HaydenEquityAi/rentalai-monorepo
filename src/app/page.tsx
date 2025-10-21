@@ -109,7 +109,7 @@ const pricingPlans = [
       { icon: HeadphonesIcon, text: 'Email support' },
       { icon: Smartphone, text: 'Mobile app access' },
     ],
-    buttonText: 'Sign Up to Start',
+    buttonText: 'Get Started',
     buttonVariant: 'outline' as const,
   },
   {
@@ -125,7 +125,7 @@ const pricingPlans = [
       { icon: BarChart3, text: 'Advanced analytics' },
     ],
     popular: true,
-    buttonText: 'Sign Up to Start',
+    buttonText: 'Start Free Trial',
     buttonVariant: 'default' as const,
   },
   {
@@ -141,7 +141,7 @@ const pricingPlans = [
       { icon: Wrench, text: 'Custom integrations' },
       { icon: GraduationCap, text: 'Onboarding assistance' },
     ],
-    buttonText: 'Sign Up to Start',
+    buttonText: 'Go Professional',
     buttonVariant: 'secondary' as const,
   },
 ];
@@ -254,6 +254,7 @@ export default function HomePage() {
       
       if (!isAuthenticated) {
         // Redirect to register page if not logged in
+        setLoading(null); // Reset loading state before redirect
         router.push('/register');
         return;
       }
@@ -749,7 +750,7 @@ export default function HomePage() {
                           Processing...
                         </div>
                       ) : (
-                        isLoggedIn === false ? 'Sign Up to Start' : plan.buttonText
+                        isLoggedIn === false ? 'Sign Up to Start' : (isLoggedIn === null ? 'Sign Up to Start' : plan.buttonText)
                       )}
                     </Button>
                   </CardContent>

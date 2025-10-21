@@ -1,0 +1,24 @@
+# Open Graph Image Placeholder
+
+This file should be replaced with an actual PNG image (1200x630px) for the Open Graph image.
+
+## Requirements:
+- Dimensions: 1200x630 pixels
+- Format: PNG
+- Content: RentalAi branding with dashboard preview
+- Style: Professional, eye-catching design
+
+## Suggested Content:
+- RentalAi logo
+- Tagline: "AI-Powered Property Management"
+- Dashboard screenshot or mockup
+- Gradient background (blue to purple)
+- Professional typography
+
+## Tools to create:
+- Figma, Canva, or similar design tools
+- Screenshot of the actual dashboard
+- Brand colors: Blue (#3b82f6) to Purple (#8b5cf6)
+
+## File location:
+public/og-image.png

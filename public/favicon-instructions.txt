@@ -1,0 +1,16 @@
+# Favicon Placeholder
+
+This file should be replaced with an actual favicon.ico file.
+
+## Requirements:
+- Format: ICO
+- Size: 16x16, 32x32, 48x48 pixels (multi-size ICO)
+- Content: RentalAi logo or building icon
+
+## Suggested Content:
+- Simple building icon
+- Blue color (#3b82f6)
+- Clean, recognizable design
+
+## File location:
+public/favicon.ico

@@ -3,8 +3,9 @@ Subscription Model
 Stripe subscription management for organizations
 """
 
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Enum as SQLEnum
-from sqlalchemy.orm import relationship
+from sqlalchemy import String, Integer, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from datetime import datetime
 from enum import Enum
@@ -36,27 +37,27 @@ class Subscription(Base):
     """Organization subscription model"""
     __tablename__ = "subscriptions"
     
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    org_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True)
     
     # Stripe fields
-    stripe_customer_id = Column(String, nullable=False, unique=True, index=True)
-    stripe_subscription_id = Column(String, nullable=True, unique=True, index=True)
+    stripe_customer_id: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    stripe_subscription_id: Mapped[str] = mapped_column(String, nullable=True, unique=True, index=True)
     
     # Subscription details
-    plan = Column(SQLEnum(SubscriptionPlan), nullable=False)
-    status = Column(SQLEnum(SubscriptionStatus), nullable=False, default=SubscriptionStatus.ACTIVE)
-    current_period_end = Column(DateTime, nullable=True)
+    plan: Mapped[SubscriptionPlan] = mapped_column(SQLEnum(SubscriptionPlan), nullable=False)
+    status: Mapped[SubscriptionStatus] = mapped_column(SQLEnum(SubscriptionStatus), nullable=False, default=SubscriptionStatus.ACTIVE)
+    current_period_end: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     
     # Usage tracking
-    door_count = Column(Integer, nullable=False, default=0)
+    door_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     
     # Timestamps
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    organization = relationship("Organization", back_populates="subscription")
+    organization: Mapped["Organization"] = relationship("Organization", back_populates="subscription")
     
     def __repr__(self):
         return f"<Subscription(id={self.id}, org_id={self.org_id}, plan={self.plan}, status={self.status})>"

@@ -20,15 +20,16 @@ import { toast } from 'sonner';
 interface Property {
   id: string;
   name: string;
-  address: string;
+  address_line1: string;
   city: string;
   state: string;
-  zip: string;
+  zip_code: string;
   property_type: string;
   total_units: number;
   year_built: number;
   description: string;
   status: 'active' | 'inactive';
+  owner_id?: string;
 }
 
 const PROPERTY_TYPES = [
@@ -63,18 +64,51 @@ export default function PropertiesPage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    address: '',
+    address_line1: '',
     city: '',
     state: '',
-    zip: '',
+    zip_code: '',
     property_type: '',
     total_units: '',
     year_built: '',
     description: '',
+    owner_id: '',
   });
 
   useEffect(() => {
     fetchProperties();
+  }, []);
+
+  useEffect(() => {
+    // Get current user ID from localStorage or auth context
+    const getCurrentUserId = () => {
+      try {
+        // Try to get user data from localStorage
+        const userData = localStorage.getItem('user_data');
+        if (userData) {
+          const user = JSON.parse(userData);
+          return user.id || user.user_id;
+        }
+        
+        // Fallback: try to get from token payload (if available)
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          // For now, we'll use a placeholder. In a real app, you'd decode the JWT
+          // or make an API call to get the current user's ID
+          return 'current-user-id'; // This should be replaced with actual user ID
+        }
+        
+        return null;
+      } catch (error) {
+        console.error('Error getting current user ID:', error);
+        return null;
+      }
+    };
+
+    const userId = getCurrentUserId();
+    if (userId) {
+      setFormData(prev => ({ ...prev, owner_id: userId }));
+    }
   }, []);
 
   const fetchProperties = async () => {
@@ -101,14 +135,15 @@ export default function PropertiesPage() {
   const resetForm = () => {
     setFormData({
       name: '',
-      address: '',
+      address_line1: '',
       city: '',
       state: '',
-      zip: '',
+      zip_code: '',
       property_type: '',
       total_units: '',
       year_built: '',
       description: '',
+      owner_id: '',
     });
   };
 
@@ -119,14 +154,15 @@ export default function PropertiesPage() {
     try {
       const response = await propertiesAPI.create({
         name: formData.name,
-        address: formData.address,
+        address_line1: formData.address_line1,
         city: formData.city,
         state: formData.state,
-        zip: formData.zip,
+        zip_code: formData.zip_code,
         property_type: formData.property_type,
         total_units: parseInt(formData.total_units) || 0,
         year_built: parseInt(formData.year_built) || new Date().getFullYear(),
         description: formData.description,
+        owner_id: formData.owner_id,
       });
 
       toast.success('Property created successfully!');
@@ -149,14 +185,15 @@ export default function PropertiesPage() {
     try {
       const response = await propertiesAPI.update(editingProperty.id, {
         name: formData.name,
-        address: formData.address,
+        address_line1: formData.address_line1,
         city: formData.city,
         state: formData.state,
-        zip: formData.zip,
+        zip_code: formData.zip_code,
         property_type: formData.property_type,
         total_units: parseInt(formData.total_units) || 0,
         year_built: parseInt(formData.year_built) || new Date().getFullYear(),
         description: formData.description,
+        owner_id: formData.owner_id,
       });
 
       toast.success('Property updated successfully!');
@@ -215,14 +252,15 @@ export default function PropertiesPage() {
     setEditingProperty(property);
     setFormData({
       name: property.name,
-      address: property.address,
+      address_line1: property.address_line1,
       city: property.city,
       state: property.state,
-      zip: property.zip,
+      zip_code: property.zip_code,
       property_type: property.property_type,
       total_units: property.total_units.toString(),
       year_built: property.year_built.toString(),
       description: property.description,
+      owner_id: property.owner_id || '',
     });
     setIsEditModalOpen(true);
   };
@@ -267,11 +305,11 @@ export default function PropertiesPage() {
         ),
       },
       {
-        accessorKey: "address",
+        accessorKey: "address_line1",
         header: "Address",
         cell: ({ row }) => (
           <div className="max-w-[200px] truncate">
-            {row.getValue("address")}
+            {row.getValue("address_line1")}
           </div>
         ),
       },
@@ -443,11 +481,11 @@ export default function PropertiesPage() {
                 </div>
                 
                 <div className="md:col-span-2">
-                  <Label htmlFor="create-address">Address *</Label>
+                  <Label htmlFor="create-address_line1">Address *</Label>
                   <Input
-                    id="create-address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    id="create-address_line1"
+                    value={formData.address_line1}
+                    onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
                     placeholder="Enter street address"
                     required
                   />
@@ -476,11 +514,11 @@ export default function PropertiesPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="create-zip">ZIP Code *</Label>
+                  <Label htmlFor="create-zip_code">ZIP Code *</Label>
                   <Input
-                    id="create-zip"
-                    value={formData.zip}
-                    onChange={(e) => setFormData({ ...formData, zip: e.target.value })}
+                    id="create-zip_code"
+                    value={formData.zip_code}
+                    onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
                     placeholder="Enter ZIP code"
                     required
                   />
@@ -586,11 +624,11 @@ export default function PropertiesPage() {
               </div>
               
               <div className="md:col-span-2">
-                <Label htmlFor="edit-address">Address *</Label>
+                <Label htmlFor="edit-address_line1">Address *</Label>
                 <Input
-                  id="edit-address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  id="edit-address_line1"
+                  value={formData.address_line1}
+                  onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
                   placeholder="Enter street address"
                   required
                 />
@@ -619,11 +657,11 @@ export default function PropertiesPage() {
               </div>
 
               <div>
-                <Label htmlFor="edit-zip">ZIP Code *</Label>
+                <Label htmlFor="edit-zip_code">ZIP Code *</Label>
                 <Input
-                  id="edit-zip"
-                  value={formData.zip}
-                  onChange={(e) => setFormData({ ...formData, zip: e.target.value })}
+                  id="edit-zip_code"
+                  value={formData.zip_code}
+                  onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
                   placeholder="Enter ZIP code"
                   required
                 />

@@ -683,12 +683,14 @@ export default function LeasesPage() {
         </Card>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={leases}
-        searchKey="leases"
-        onRowSelectionChange={setSelectedRows}
-      />
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+        <DataTable
+          columns={columns}
+          data={leases}
+          searchKey="leases"
+          onRowSelectionChange={setSelectedRows}
+        />
+      </div>
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

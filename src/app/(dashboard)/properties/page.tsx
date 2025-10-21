@@ -561,13 +561,15 @@ export default function PropertiesPage() {
         </Dialog>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={properties}
-        searchKey="properties"
-        onRowSelectionChange={setSelectedRows}
-        bulkActions={bulkActions}
-      />
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+        <DataTable
+          columns={columns}
+          data={properties}
+          searchKey="properties"
+          onRowSelectionChange={setSelectedRows}
+          bulkActions={bulkActions}
+        />
+      </div>
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

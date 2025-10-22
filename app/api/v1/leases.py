@@ -79,15 +79,15 @@ async def list_leases(
 ):
     """List leases with pagination and filters"""
     
-    # Build query   
-query = select(Lease).options(
-    selectinload(Lease.unit).selectinload(Unit.property)
-).where(
-    and_(
-        Lease.org_id == org_id,
-        Lease.deleted_at.is_(None)
+    # Build query
+    query = select(Lease).options(
+        selectinload(Lease.unit).selectinload(Unit.property)
+    ).where(
+        and_(
+            Lease.org_id == org_id,
+            Lease.deleted_at.is_(None)
+        )
     )
-)
     
 # Apply filters
 if status:
@@ -364,16 +364,16 @@ async def renew_lease(
     # Get lease
     result = await db.execute(
         select(Lease).options(
-        selectinload(Lease.unit).selectinload(Unit.property)
-    ).where(
-        and_(
-            Lease.id == lease_id,
-            Lease.org_id == org_id,
-            Lease.deleted_at.is_(None)
+            selectinload(Lease.unit).selectinload(Unit.property)
+        ).where(
+            and_(
+                Lease.id == lease_id,
+                Lease.org_id == org_id,
+                Lease.deleted_at.is_(None)
+            )
         )
     )
-)
-lease = result.scalar_one_or_none()
+    lease = result.scalar_one_or_none()
     
     if not lease:
         raise HTTPException(

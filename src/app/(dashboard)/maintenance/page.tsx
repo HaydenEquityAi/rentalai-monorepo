@@ -49,7 +49,6 @@ const PRIORITIES = [
 
 const STATUSES = [
   { value: 'open', label: 'Open' },
-  { value: 'assigned', label: 'Assigned' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
@@ -64,7 +63,6 @@ const PRIORITY_COLORS = {
 
 const STATUS_COLORS = {
   open: 'info',
-  assigned: 'warning',
   in_progress: 'warning',
   completed: 'success',
   cancelled: 'secondary',

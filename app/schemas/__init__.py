@@ -270,7 +270,7 @@ class PropertyDetailResponse(PropertyResponse):
         )
 
 
-# ============================================================================
+# ===========================================================================
 # UNIT SCHEMAS
 # ============================================================================
 
@@ -279,21 +279,24 @@ class UnitBase(BaseSchema):
     unit_number: str
     bedrooms: float = Field(ge=0, le=10)
     bathrooms: float = Field(ge=0, le=10)
-    sqft: Optional[int] = Field(None, ge=0)
-    market_rent: Decimal = Field(..., ge=0)
+    square_feet: Optional[float] = Field(None, ge=0)  # ✅ FIXED: Changed from sqft
+    rent_amount: Decimal = Field(..., ge=0)            # ✅ FIXED: Changed from market_rent
+    deposit_amount: Decimal = Field(..., ge=0)         # ✅ ADDED
 
 
 class UnitCreate(UnitBase):
     """Create unit"""
     property_id: UUID
-    building_id: Optional[UUID] = None
     floor: Optional[int] = None
     floor_plan: Optional[str] = None
+    amenities: Optional[List[str]] = []               # ✅ ADDED
 
 
 class UnitUpdate(BaseSchema):
     """Update unit"""
-    market_rent: Optional[Decimal] = None
+    rent_amount: Optional[Decimal] = None             # ✅ FIXED: Changed from market_rent
+    deposit_amount: Optional[Decimal] = None          # ✅ ADDED
+    square_feet: Optional[float] = None               # ✅ ADDED
     status: Optional[UnitStatus] = None
     amenities: Optional[List[str]] = None
 
@@ -303,11 +306,9 @@ class UnitResponse(UnitBase, TimestampSchema):
     id: UUID
     org_id: UUID
     property_id: UUID
-    building_id: Optional[UUID] = None
     status: UnitStatus
-    current_rent: Optional[Decimal] = None
-    available_date: Optional[date] = None
-
+    amenities: List[str] = []                         # ✅ ADDED
+    photos: List[str] = []                            # ✅ ADDED
 
 # ============================================================================
 # LEAD/CRM SCHEMAS

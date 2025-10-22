@@ -276,7 +276,11 @@ export default function UnitsPage() {
   };
 
   // Calculate stats
-  const stats = useMemo(() => {
+  // Helper function to get property name by ID
+  const getPropertyName = (propertyId: string) => {
+    const property = properties.find(p => p.id === propertyId);
+    return property?.name || 'Unknown Property';
+  };
     const totalUnits = units.length;
     const availableUnits = units.filter(unit => unit.status === 'available').length;
     const occupiedUnits = units.filter(unit => unit.status === 'occupied').length;
@@ -332,10 +336,9 @@ export default function UnitsPage() {
         header: "Property",
         cell: ({ row }) => {
           const unit = row.original;
-          const property = properties.find(p => p.id === unit.property_id);
           return (
             <div className="font-medium">
-              {property?.name || 'Unknown Property'}
+              {getPropertyName(unit.property_id)}
             </div>
           );
         },

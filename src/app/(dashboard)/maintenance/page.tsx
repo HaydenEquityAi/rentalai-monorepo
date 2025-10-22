@@ -27,7 +27,7 @@ interface MaintenanceRequest {
   category: string;
   priority: string;
   status: string;
-  submitted_date: string;
+  created_at: string;
   estimated_cost?: number;
 }
 
@@ -336,7 +336,7 @@ export default function MaintenancePage() {
     const inProgress = requests.filter(req => req.status === 'in_progress').length;
     const completedThisMonth = requests.filter(req => {
       if (req.status !== 'completed') return false;
-      const completedDate = new Date(req.submitted_date);
+      const completedDate = new Date(req.created_at);
       const now = new Date();
       return completedDate.getMonth() === now.getMonth() && completedDate.getFullYear() === now.getFullYear();
     }).length;
@@ -380,7 +380,7 @@ export default function MaintenancePage() {
         header: "Request ID",
         cell: ({ row }) => (
           <div className="font-mono text-sm">
-            #{row.getValue("request_id")}
+            #{row.getValue("request_id")?.toString().substring(0, 8)}
           </div>
         ),
       },
@@ -450,10 +450,10 @@ export default function MaintenancePage() {
         },
       },
       {
-        accessorKey: "submitted_date",
+        accessorKey: "created_at",
         header: "Submitted Date",
         cell: ({ row }) => {
-          const date = new Date(row.getValue("submitted_date"));
+          const date = new Date(row.getValue("created_at"));
           return date.toLocaleDateString();
         },
       },

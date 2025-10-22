@@ -185,6 +185,7 @@ class PropertyCreate(PropertyBase):
     market_value: Optional[float] = None
     parking_spaces: Optional[int] = None
     amenities: Optional[List[str]] = None
+    photos: Optional[List[str]] = None
     description: Optional[str] = None
 
 

@@ -17,35 +17,43 @@ import { toast } from 'sonner';
 
 interface Lease {
   id: string;
-  property_id: string;
+  unit_id: string;
   property_name: string;
   unit_number: string;
-  tenant_name: string;
+  tenant_first_name: string;
+  tenant_last_name: string;
+  tenant_email: string;
+  tenant_phone: string;
   start_date: string;
   end_date: string;
   monthly_rent: number;
   status: string;
-  security_deposit: number;
+  deposit_amount: number;
+  rent_due_day: number;
+  late_fee_amount?: number;
+  late_fee_grace_days: number;
+  auto_pay_enabled: boolean;
   notes?: string;
 }
 
 const LEASE_STATUSES = [
-  { value: 'active', label: 'Active' },
-  { value: 'expired', label: 'Expired' },
-  { value: 'upcoming', label: 'Upcoming' },
-  { value: 'terminated', label: 'Terminated' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'EXPIRED', label: 'Expired' },
+  { value: 'TERMINATED', label: 'Terminated' },
 ];
 
 const STATUS_COLORS = {
-  active: 'success',
-  expired: 'secondary',
-  upcoming: 'info',
-  terminated: 'destructive',
+  PENDING: 'warning',
+  ACTIVE: 'success',
+  EXPIRED: 'secondary',
+  TERMINATED: 'destructive',
 } as const;
 
 export default function LeasesPage() {
   const [leases, setLeases] = useState<Lease[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
+  const [units, setUnits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -57,23 +65,40 @@ export default function LeasesPage() {
   const [selectedRows, setSelectedRows] = useState<Lease[]>([]);
 
   const [formData, setFormData] = useState({
-    property_id: '',
-    unit_number: '',
-    tenant_name: '',
+    unit_id: '',
+    tenant_first_name: '',
+    tenant_last_name: '',
+    tenant_email: '',
+    tenant_phone: '',
     start_date: '',
     end_date: '',
     monthly_rent: '',
-    security_deposit: '',
-    status: 'active',
+    deposit_amount: '',
+    status: 'PENDING',
+    rent_due_day: '1',
+    late_fee_amount: '',
+    late_fee_grace_days: '5',
+    auto_pay_enabled: false,
     notes: '',
   });
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
   useEffect(() => {
-    fetchLeases();
-    fetchProperties();
+    const loadData = async () => {
+      await fetchLeases();
+      await fetchProperties();
+      // fetchUnits will be called after properties are loaded
+    };
+    loadData();
   }, []);
+
+  useEffect(() => {
+    // Create mock units when properties are loaded
+    if (properties.length > 0) {
+      fetchUnits();
+    }
+  }, [properties]);
 
   const fetchLeases = async () => {
     try {
@@ -121,16 +146,54 @@ export default function LeasesPage() {
     }
   };
 
+  const fetchUnits = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/units/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUnits(data.items || data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load units:', err);
+      // If units endpoint doesn't exist, create mock units from properties
+      if (properties.length > 0) {
+        const mockUnits = properties.flatMap(property => 
+          Array.from({ length: property.total_units || 1 }, (_, i) => ({
+            id: `${property.id}-unit-${i + 1}`,
+            property_id: property.id,
+            property_name: property.name,
+            unit_number: `${i + 1}`,
+            name: `${property.name} - Unit ${i + 1}`
+          }))
+        );
+        setUnits(mockUnits);
+      }
+    }
+  };
+
   const resetForm = () => {
     setFormData({
-      property_id: '',
-      unit_number: '',
-      tenant_name: '',
+      unit_id: '',
+      tenant_first_name: '',
+      tenant_last_name: '',
+      tenant_email: '',
+      tenant_phone: '',
       start_date: '',
       end_date: '',
       monthly_rent: '',
-      security_deposit: '',
-      status: 'active',
+      deposit_amount: '',
+      status: 'PENDING',
+      rent_due_day: '1',
+      late_fee_amount: '',
+      late_fee_grace_days: '5',
+      auto_pay_enabled: false,
       notes: '',
     });
   };
@@ -148,14 +211,20 @@ export default function LeasesPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          property_id: formData.property_id,
-          unit_number: formData.unit_number,
-          tenant_name: formData.tenant_name,
+          unit_id: formData.unit_id,
+          tenant_first_name: formData.tenant_first_name,
+          tenant_last_name: formData.tenant_last_name,
+          tenant_email: formData.tenant_email,
+          tenant_phone: formData.tenant_phone,
           start_date: formData.start_date,
           end_date: formData.end_date,
           monthly_rent: parseFloat(formData.monthly_rent) || 0,
-          security_deposit: parseFloat(formData.security_deposit) || 0,
+          deposit_amount: parseFloat(formData.deposit_amount) || 0,
           status: formData.status,
+          rent_due_day: parseInt(formData.rent_due_day) || 1,
+          late_fee_amount: formData.late_fee_amount ? parseFloat(formData.late_fee_amount) : undefined,
+          late_fee_grace_days: parseInt(formData.late_fee_grace_days) || 5,
+          auto_pay_enabled: formData.auto_pay_enabled,
           notes: formData.notes,
         })
       });
@@ -191,14 +260,20 @@ export default function LeasesPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          property_id: formData.property_id,
-          unit_number: formData.unit_number,
-          tenant_name: formData.tenant_name,
+          unit_id: formData.unit_id,
+          tenant_first_name: formData.tenant_first_name,
+          tenant_last_name: formData.tenant_last_name,
+          tenant_email: formData.tenant_email,
+          tenant_phone: formData.tenant_phone,
           start_date: formData.start_date,
           end_date: formData.end_date,
           monthly_rent: parseFloat(formData.monthly_rent) || 0,
-          security_deposit: parseFloat(formData.security_deposit) || 0,
+          deposit_amount: parseFloat(formData.deposit_amount) || 0,
           status: formData.status,
+          rent_due_day: parseInt(formData.rent_due_day) || 1,
+          late_fee_amount: formData.late_fee_amount ? parseFloat(formData.late_fee_amount) : undefined,
+          late_fee_grace_days: parseInt(formData.late_fee_grace_days) || 5,
+          auto_pay_enabled: formData.auto_pay_enabled,
           notes: formData.notes,
         })
       });
@@ -254,14 +329,20 @@ export default function LeasesPage() {
   const openEditModal = (lease: Lease) => {
     setEditingLease(lease);
     setFormData({
-      property_id: lease.property_id,
-      unit_number: lease.unit_number,
-      tenant_name: lease.tenant_name,
+      unit_id: lease.unit_id,
+      tenant_first_name: lease.tenant_first_name,
+      tenant_last_name: lease.tenant_last_name,
+      tenant_email: lease.tenant_email,
+      tenant_phone: lease.tenant_phone,
       start_date: lease.start_date,
       end_date: lease.end_date,
       monthly_rent: lease.monthly_rent.toString(),
-      security_deposit: lease.security_deposit.toString(),
+      deposit_amount: lease.deposit_amount.toString(),
       status: lease.status,
+      rent_due_day: lease.rent_due_day.toString(),
+      late_fee_amount: lease.late_fee_amount?.toString() || '',
+      late_fee_grace_days: lease.late_fee_grace_days.toString(),
+      auto_pay_enabled: lease.auto_pay_enabled,
       notes: lease.notes || '',
     });
     setIsEditModalOpen(true);
@@ -274,7 +355,7 @@ export default function LeasesPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const activeLeases = leases.filter(lease => lease.status === 'active').length;
+    const activeLeases = leases.filter(lease => lease.status === 'ACTIVE').length;
     const expiringSoon = leases.filter(lease => {
       const endDate = new Date(lease.end_date);
       const now = new Date();
@@ -282,7 +363,7 @@ export default function LeasesPage() {
       return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
     }).length;
     const totalMonthlyRevenue = leases
-      .filter(lease => lease.status === 'active')
+      .filter(lease => lease.status === 'ACTIVE')
       .reduce((sum, lease) => sum + lease.monthly_rent, 0);
     const avgRent = activeLeases > 0 ? totalMonthlyRevenue / activeLeases : 0;
 
@@ -330,11 +411,11 @@ export default function LeasesPage() {
         ),
       },
       {
-        accessorKey: "tenant_name",
+        accessorKey: "tenant_first_name",
         header: "Tenant Name",
         cell: ({ row }) => (
           <div className="font-medium">
-            {row.getValue("tenant_name")}
+            {`${row.original.tenant_first_name} ${row.original.tenant_last_name}`}
           </div>
         ),
       },
@@ -487,15 +568,15 @@ export default function LeasesPage() {
             <form onSubmit={handleCreateLease} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="create-property_id">Property *</Label>
-                  <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
+                  <Label htmlFor="create-unit_id">Unit *</Label>
+                  <Select value={formData.unit_id} onValueChange={(value) => setFormData({ ...formData, unit_id: value })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select property" />
+                      <SelectValue placeholder="Select unit" />
                     </SelectTrigger>
                     <SelectContent>
-                      {properties.map((property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.name}
+                      {units.map((unit) => (
+                        <SelectItem key={unit.id} value={unit.id}>
+                          {unit.name || `${unit.property_name} - Unit ${unit.unit_number}`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -503,23 +584,47 @@ export default function LeasesPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="create-unit_number">Unit Number *</Label>
+                  <Label htmlFor="create-tenant_first_name">Tenant First Name *</Label>
                   <Input
-                    id="create-unit_number"
-                    value={formData.unit_number}
-                    onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
-                    placeholder="Enter unit number"
+                    id="create-tenant_first_name"
+                    value={formData.tenant_first_name}
+                    onChange={(e) => setFormData({ ...formData, tenant_first_name: e.target.value })}
+                    placeholder="Enter first name"
                     required
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="create-tenant_name">Tenant Name *</Label>
+                  <Label htmlFor="create-tenant_last_name">Tenant Last Name *</Label>
                   <Input
-                    id="create-tenant_name"
-                    value={formData.tenant_name}
-                    onChange={(e) => setFormData({ ...formData, tenant_name: e.target.value })}
-                    placeholder="Enter tenant name"
+                    id="create-tenant_last_name"
+                    value={formData.tenant_last_name}
+                    onChange={(e) => setFormData({ ...formData, tenant_last_name: e.target.value })}
+                    placeholder="Enter last name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-tenant_email">Tenant Email *</Label>
+                  <Input
+                    id="create-tenant_email"
+                    type="email"
+                    value={formData.tenant_email}
+                    onChange={(e) => setFormData({ ...formData, tenant_email: e.target.value })}
+                    placeholder="Enter email address"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-tenant_phone">Tenant Phone *</Label>
+                  <Input
+                    id="create-tenant_phone"
+                    type="tel"
+                    value={formData.tenant_phone}
+                    onChange={(e) => setFormData({ ...formData, tenant_phone: e.target.value })}
+                    placeholder="Enter phone number"
                     required
                   />
                 </div>
@@ -561,15 +666,16 @@ export default function LeasesPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="create-security_deposit">Security Deposit</Label>
+                  <Label htmlFor="create-deposit_amount">Deposit Amount *</Label>
                   <Input
-                    id="create-security_deposit"
+                    id="create-deposit_amount"
                     type="number"
-                    value={formData.security_deposit}
-                    onChange={(e) => setFormData({ ...formData, security_deposit: e.target.value })}
-                    placeholder="Enter security deposit"
+                    value={formData.deposit_amount}
+                    onChange={(e) => setFormData({ ...formData, deposit_amount: e.target.value })}
+                    placeholder="Enter deposit amount"
                     min="0"
                     step="0.01"
+                    required
                   />
                 </div>
 
@@ -587,6 +693,55 @@ export default function LeasesPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="create-rent_due_day">Rent Due Day</Label>
+                  <Input
+                    id="create-rent_due_day"
+                    type="number"
+                    value={formData.rent_due_day}
+                    onChange={(e) => setFormData({ ...formData, rent_due_day: e.target.value })}
+                    placeholder="Day of month"
+                    min="1"
+                    max="31"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-late_fee_amount">Late Fee Amount</Label>
+                  <Input
+                    id="create-late_fee_amount"
+                    type="number"
+                    value={formData.late_fee_amount}
+                    onChange={(e) => setFormData({ ...formData, late_fee_amount: e.target.value })}
+                    placeholder="Enter late fee amount"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="create-late_fee_grace_days">Late Fee Grace Days</Label>
+                  <Input
+                    id="create-late_fee_grace_days"
+                    type="number"
+                    value={formData.late_fee_grace_days}
+                    onChange={(e) => setFormData({ ...formData, late_fee_grace_days: e.target.value })}
+                    placeholder="Grace period in days"
+                    min="0"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="create-auto_pay_enabled"
+                      checked={formData.auto_pay_enabled}
+                      onCheckedChange={(checked) => setFormData({ ...formData, auto_pay_enabled: !!checked })}
+                    />
+                    <Label htmlFor="create-auto_pay_enabled">Enable Auto Pay</Label>
+                  </div>
                 </div>
 
                 <div className="md:col-span-2">
@@ -704,15 +859,15 @@ export default function LeasesPage() {
           <form onSubmit={handleEditLease} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit-property_id">Property *</Label>
-                <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
+                <Label htmlFor="edit-unit_id">Unit *</Label>
+                <Select value={formData.unit_id} onValueChange={(value) => setFormData({ ...formData, unit_id: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select property" />
+                    <SelectValue placeholder="Select unit" />
                   </SelectTrigger>
                   <SelectContent>
-                    {properties.map((property) => (
-                      <SelectItem key={property.id} value={property.id}>
-                        {property.name}
+                    {units.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.name || `${unit.property_name} - Unit ${unit.unit_number}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -720,23 +875,47 @@ export default function LeasesPage() {
               </div>
 
               <div>
-                <Label htmlFor="edit-unit_number">Unit Number *</Label>
+                <Label htmlFor="edit-tenant_first_name">Tenant First Name *</Label>
                 <Input
-                  id="edit-unit_number"
-                  value={formData.unit_number}
-                  onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
-                  placeholder="Enter unit number"
+                  id="edit-tenant_first_name"
+                  value={formData.tenant_first_name}
+                  onChange={(e) => setFormData({ ...formData, tenant_first_name: e.target.value })}
+                  placeholder="Enter first name"
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="edit-tenant_name">Tenant Name *</Label>
+                <Label htmlFor="edit-tenant_last_name">Tenant Last Name *</Label>
                 <Input
-                  id="edit-tenant_name"
-                  value={formData.tenant_name}
-                  onChange={(e) => setFormData({ ...formData, tenant_name: e.target.value })}
-                  placeholder="Enter tenant name"
+                  id="edit-tenant_last_name"
+                  value={formData.tenant_last_name}
+                  onChange={(e) => setFormData({ ...formData, tenant_last_name: e.target.value })}
+                  placeholder="Enter last name"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-tenant_email">Tenant Email *</Label>
+                <Input
+                  id="edit-tenant_email"
+                  type="email"
+                  value={formData.tenant_email}
+                  onChange={(e) => setFormData({ ...formData, tenant_email: e.target.value })}
+                  placeholder="Enter email address"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-tenant_phone">Tenant Phone *</Label>
+                <Input
+                  id="edit-tenant_phone"
+                  type="tel"
+                  value={formData.tenant_phone}
+                  onChange={(e) => setFormData({ ...formData, tenant_phone: e.target.value })}
+                  placeholder="Enter phone number"
                   required
                 />
               </div>
@@ -778,15 +957,16 @@ export default function LeasesPage() {
               </div>
 
               <div>
-                <Label htmlFor="edit-security_deposit">Security Deposit</Label>
+                <Label htmlFor="edit-deposit_amount">Deposit Amount *</Label>
                 <Input
-                  id="edit-security_deposit"
+                  id="edit-deposit_amount"
                   type="number"
-                  value={formData.security_deposit}
-                  onChange={(e) => setFormData({ ...formData, security_deposit: e.target.value })}
-                  placeholder="Enter security deposit"
+                  value={formData.deposit_amount}
+                  onChange={(e) => setFormData({ ...formData, deposit_amount: e.target.value })}
+                  placeholder="Enter deposit amount"
                   min="0"
                   step="0.01"
+                  required
                 />
               </div>
 
@@ -804,6 +984,55 @@ export default function LeasesPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-rent_due_day">Rent Due Day</Label>
+                <Input
+                  id="edit-rent_due_day"
+                  type="number"
+                  value={formData.rent_due_day}
+                  onChange={(e) => setFormData({ ...formData, rent_due_day: e.target.value })}
+                  placeholder="Day of month"
+                  min="1"
+                  max="31"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-late_fee_amount">Late Fee Amount</Label>
+                <Input
+                  id="edit-late_fee_amount"
+                  type="number"
+                  value={formData.late_fee_amount}
+                  onChange={(e) => setFormData({ ...formData, late_fee_amount: e.target.value })}
+                  placeholder="Enter late fee amount"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-late_fee_grace_days">Late Fee Grace Days</Label>
+                <Input
+                  id="edit-late_fee_grace_days"
+                  type="number"
+                  value={formData.late_fee_grace_days}
+                  onChange={(e) => setFormData({ ...formData, late_fee_grace_days: e.target.value })}
+                  placeholder="Grace period in days"
+                  min="0"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="edit-auto_pay_enabled"
+                    checked={formData.auto_pay_enabled}
+                    onCheckedChange={(checked) => setFormData({ ...formData, auto_pay_enabled: !!checked })}
+                  />
+                  <Label htmlFor="edit-auto_pay_enabled">Enable Auto Pay</Label>
+                </div>
               </div>
 
               <div className="md:col-span-2">

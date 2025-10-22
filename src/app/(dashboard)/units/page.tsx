@@ -275,12 +275,14 @@ export default function UnitsPage() {
     setIsDeleteModalOpen(true);
   };
 
-  // Calculate stats
   // Helper function to get property name by ID
   const getPropertyName = (propertyId: string) => {
     const property = properties.find(p => p.id === propertyId);
     return property?.name || 'Unknown Property';
   };
+
+  // Calculate stats
+  const stats = useMemo(() => {
     const totalUnits = units.length;
     const availableUnits = units.filter(unit => unit.status === 'available').length;
     const occupiedUnits = units.filter(unit => unit.status === 'occupied').length;

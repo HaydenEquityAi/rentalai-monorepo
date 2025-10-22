@@ -180,6 +180,11 @@ class PropertyCreate(PropertyBase):
     total_sqft: Optional[int] = None
     square_footage: Optional[int] = None
     lot_size: Optional[float] = None
+    purchase_price: Optional[float] = None
+    purchase_date: Optional[date] = None
+    market_value: Optional[float] = None
+    parking_spaces: Optional[int] = None
+    amenities: Optional[List[str]] = None
     description: Optional[str] = None
 
 

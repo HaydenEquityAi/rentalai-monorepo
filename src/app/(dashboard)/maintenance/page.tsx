@@ -19,17 +19,26 @@ import { toast } from 'sonner';
 interface MaintenanceRequest {
   id: string;
   request_id: string;
-  property_id: string;
+  unit_id?: string;
   property_name: string;
   unit_number: string;
-  issue_description: string;
+  title: string;
+  description: string;
+  category: string;
   priority: string;
   status: string;
   submitted_date: string;
-  assigned_to?: string;
   estimated_cost?: number;
-  notes?: string;
 }
+
+const CATEGORIES = [
+  { value: 'plumbing', label: 'Plumbing' },
+  { value: 'electrical', label: 'Electrical' },
+  { value: 'hvac', label: 'HVAC' },
+  { value: 'appliance', label: 'Appliance' },
+  { value: 'structural', label: 'Structural' },
+  { value: 'other', label: 'Other' },
+];
 
 const PRIORITIES = [
   { value: 'low', label: 'Low' },
@@ -64,6 +73,7 @@ const STATUS_COLORS = {
 export default function MaintenancePage() {
   const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
+  const [units, setUnits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -75,22 +85,31 @@ export default function MaintenancePage() {
   const [selectedRows, setSelectedRows] = useState<MaintenanceRequest[]>([]);
 
   const [formData, setFormData] = useState({
-    property_id: '',
-    unit_number: '',
-    issue_description: '',
+    unit_id: '',
+    title: '',
+    description: '',
+    category: '',
     priority: 'medium',
     status: 'open',
-    assigned_to: '',
     estimated_cost: '',
-    notes: '',
   });
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
   useEffect(() => {
-    fetchRequests();
-    fetchProperties();
+    const loadData = async () => {
+      await fetchRequests();
+      await fetchProperties();
+    };
+    loadData();
   }, []);
+
+  useEffect(() => {
+    // Create mock units when properties are loaded
+    if (properties.length > 0) {
+      fetchUnits();
+    }
+  }, [properties]);
 
   const fetchRequests = async () => {
     try {
@@ -138,16 +157,47 @@ export default function MaintenancePage() {
     }
   };
 
+  const fetchUnits = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_BASE_URL}/units/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUnits(data.items || data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load units:', err);
+      // If units endpoint doesn't exist, create mock units from properties
+      if (properties.length > 0) {
+        const mockUnits = properties.flatMap(property => 
+          Array.from({ length: property.total_units || 1 }, (_, i) => ({
+            id: `${property.id}-unit-${i + 1}`,
+            property_id: property.id,
+            property_name: property.name,
+            unit_number: `${i + 1}`,
+            name: `${property.name} - Unit ${i + 1}`
+          }))
+        );
+        setUnits(mockUnits);
+      }
+    }
+  };
+
   const resetForm = () => {
     setFormData({
-      property_id: '',
-      unit_number: '',
-      issue_description: '',
+      unit_id: '',
+      title: '',
+      description: '',
+      category: '',
       priority: 'medium',
       status: 'open',
-      assigned_to: '',
       estimated_cost: '',
-      notes: '',
     });
   };
 
@@ -164,14 +214,13 @@ export default function MaintenancePage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          property_id: formData.property_id,
-          unit_number: formData.unit_number,
-          issue_description: formData.issue_description,
+          unit_id: formData.unit_id || null,
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
           priority: formData.priority,
           status: formData.status,
-          assigned_to: formData.assigned_to || null,
           estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : null,
-          notes: formData.notes,
         })
       });
 
@@ -206,14 +255,13 @@ export default function MaintenancePage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          property_id: formData.property_id,
-          unit_number: formData.unit_number,
-          issue_description: formData.issue_description,
+          unit_id: formData.unit_id || null,
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
           priority: formData.priority,
           status: formData.status,
-          assigned_to: formData.assigned_to || null,
           estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : null,
-          notes: formData.notes,
         })
       });
 
@@ -268,14 +316,13 @@ export default function MaintenancePage() {
   const openEditModal = (request: MaintenanceRequest) => {
     setEditingRequest(request);
     setFormData({
-      property_id: request.property_id,
-      unit_number: request.unit_number,
-      issue_description: request.issue_description,
+      unit_id: request.unit_id || '',
+      title: request.title,
+      description: request.description,
+      category: request.category,
       priority: request.priority,
       status: request.status,
-      assigned_to: request.assigned_to || '',
       estimated_cost: request.estimated_cost?.toString() || '',
-      notes: request.notes || '',
     });
     setIsEditModalOpen(true);
   };
@@ -352,13 +399,27 @@ export default function MaintenancePage() {
         ),
       },
       {
-        accessorKey: "issue_description",
-        header: "Issue Description",
+        accessorKey: "title",
+        header: "Title",
         cell: ({ row }) => (
           <div className="max-w-[200px] truncate">
-            {row.getValue("issue_description")}
+            {row.getValue("title")}
           </div>
         ),
+      },
+      {
+        accessorKey: "category",
+        header: "Category",
+        cell: ({ row }) => {
+          const category = row.getValue("category") as string;
+          const label = CATEGORIES.find(c => c.value === category)?.label || category;
+          
+          return (
+            <Badge variant="outline">
+              {label}
+            </Badge>
+          );
+        },
       },
       {
         accessorKey: "priority",
@@ -507,15 +568,15 @@ export default function MaintenancePage() {
             <form onSubmit={handleCreateRequest} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="create-property_id">Property *</Label>
-                  <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
+                  <Label htmlFor="create-unit_id">Unit</Label>
+                  <Select value={formData.unit_id} onValueChange={(value) => setFormData({ ...formData, unit_id: value })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select property" />
+                      <SelectValue placeholder="Select unit (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      {properties.map((property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.name}
+                      {units.map((unit) => (
+                        <SelectItem key={unit.id} value={unit.id}>
+                          {unit.name || `${unit.property_name} - Unit ${unit.unit_number}`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -523,22 +584,39 @@ export default function MaintenancePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="create-unit_number">Unit Number</Label>
+                  <Label htmlFor="create-category">Category *</Label>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="create-title">Title *</Label>
                   <Input
-                    id="create-unit_number"
-                    value={formData.unit_number}
-                    onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
-                    placeholder="Enter unit number"
+                    id="create-title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Enter maintenance request title"
+                    required
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <Label htmlFor="create-issue_description">Issue Description *</Label>
+                  <Label htmlFor="create-description">Description *</Label>
                   <Textarea
-                    id="create-issue_description"
-                    value={formData.issue_description}
-                    onChange={(e) => setFormData({ ...formData, issue_description: e.target.value })}
-                    placeholder="Describe the maintenance issue"
+                    id="create-description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Describe the maintenance issue in detail"
                     rows={3}
                     required
                   />
@@ -577,16 +655,6 @@ export default function MaintenancePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="create-assigned_to">Assigned To</Label>
-                  <Input
-                    id="create-assigned_to"
-                    value={formData.assigned_to}
-                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                    placeholder="Enter assigned person"
-                  />
-                </div>
-
-                <div>
                   <Label htmlFor="create-estimated_cost">Estimated Cost</Label>
                   <Input
                     id="create-estimated_cost"
@@ -596,17 +664,6 @@ export default function MaintenancePage() {
                     placeholder="Enter estimated cost"
                     min="0"
                     step="0.01"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <Label htmlFor="create-notes">Notes</Label>
-                  <Textarea
-                    id="create-notes"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Enter any additional notes"
-                    rows={2}
                   />
                 </div>
               </div>
@@ -715,15 +772,15 @@ export default function MaintenancePage() {
           <form onSubmit={handleEditRequest} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit-property_id">Property *</Label>
-                <Select value={formData.property_id} onValueChange={(value) => setFormData({ ...formData, property_id: value })}>
+                <Label htmlFor="edit-unit_id">Unit</Label>
+                <Select value={formData.unit_id} onValueChange={(value) => setFormData({ ...formData, unit_id: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select property" />
+                    <SelectValue placeholder="Select unit (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {properties.map((property) => (
-                      <SelectItem key={property.id} value={property.id}>
-                        {property.name}
+                    {units.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.name || `${unit.property_name} - Unit ${unit.unit_number}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -731,22 +788,39 @@ export default function MaintenancePage() {
               </div>
 
               <div>
-                <Label htmlFor="edit-unit_number">Unit Number</Label>
+                <Label htmlFor="edit-category">Category *</Label>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-title">Title *</Label>
                 <Input
-                  id="edit-unit_number"
-                  value={formData.unit_number}
-                  onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
-                  placeholder="Enter unit number"
+                  id="edit-title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter maintenance request title"
+                  required
                 />
               </div>
 
               <div className="md:col-span-2">
-                <Label htmlFor="edit-issue_description">Issue Description *</Label>
+                <Label htmlFor="edit-description">Description *</Label>
                 <Textarea
-                  id="edit-issue_description"
-                  value={formData.issue_description}
-                  onChange={(e) => setFormData({ ...formData, issue_description: e.target.value })}
-                  placeholder="Describe the maintenance issue"
+                  id="edit-description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Describe the maintenance issue in detail"
                   rows={3}
                   required
                 />
@@ -785,16 +859,6 @@ export default function MaintenancePage() {
               </div>
 
               <div>
-                <Label htmlFor="edit-assigned_to">Assigned To</Label>
-                <Input
-                  id="edit-assigned_to"
-                  value={formData.assigned_to}
-                  onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                  placeholder="Enter assigned person"
-                />
-              </div>
-
-              <div>
                 <Label htmlFor="edit-estimated_cost">Estimated Cost</Label>
                 <Input
                   id="edit-estimated_cost"
@@ -804,17 +868,6 @@ export default function MaintenancePage() {
                   placeholder="Enter estimated cost"
                   min="0"
                   step="0.01"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="edit-notes">Notes</Label>
-                <Textarea
-                  id="edit-notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Enter any additional notes"
-                  rows={2}
                 />
               </div>
             </div>

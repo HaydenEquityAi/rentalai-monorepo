@@ -295,6 +295,7 @@ class UnitBase(BaseSchema):
 class UnitCreate(UnitBase):
     """Create unit"""
     property_id: UUID
+    status: UnitStatus = UnitStatus.AVAILABLE
     floor: Optional[int] = None
     floor_plan: Optional[str] = None
     amenities: Optional[List[str]] = []               # ✅ ADDED

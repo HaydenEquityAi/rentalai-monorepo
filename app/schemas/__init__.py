@@ -178,6 +178,7 @@ class PropertyCreate(PropertyBase):
     year_built: Optional[int] = None
     total_units: Optional[int] = None
     total_sqft: Optional[int] = None
+    square_footage: Optional[int] = None
     description: Optional[str] = None
 
 

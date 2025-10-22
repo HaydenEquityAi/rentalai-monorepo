@@ -330,11 +330,15 @@ export default function UnitsPage() {
       {
         accessorKey: "property_name",
         header: "Property",
-        cell: ({ row }) => (
-          <div className="font-medium">
-            {row.getValue("property_name")}
-          </div>
-        ),
+        cell: ({ row }) => {
+          const unit = row.original;
+          const property = properties.find(p => p.id === unit.property_id);
+          return (
+            <div className="font-medium">
+              {property?.name || 'Unknown Property'}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "bedrooms",
@@ -350,7 +354,7 @@ export default function UnitsPage() {
         header: "Rent",
         cell: ({ row }) => (
           <div className="text-right font-medium">
-            ${row.getValue("rent_amount")?.toLocaleString()}
+            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(row.getValue("rent_amount") || 0)}
           </div>
         ),
       },
@@ -681,7 +685,7 @@ export default function UnitsPage() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Rent Roll</dt>
-                  <dd className="text-2xl font-semibold text-gray-900">${stats.totalRentRoll.toLocaleString()}</dd>
+                  <dd className="text-2xl font-semibold text-gray-900">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(stats.totalRentRoll)}</dd>
                 </dl>
               </div>
             </div>

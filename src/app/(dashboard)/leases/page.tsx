@@ -440,7 +440,7 @@ export default function LeasesPage() {
         header: "Monthly Rent",
         cell: ({ row }) => (
           <div className="text-right font-medium">
-            ${row.getValue("monthly_rent")?.toLocaleString()}
+            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(row.getValue("monthly_rent") || 0)}
           </div>
         ),
       },
@@ -814,7 +814,7 @@ export default function LeasesPage() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Monthly Revenue</dt>
-                  <dd className="text-2xl font-semibold text-gray-900">${stats.totalMonthlyRevenue.toLocaleString()}</dd>
+                  <dd className="text-2xl font-semibold text-gray-900">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(stats.totalMonthlyRevenue)}</dd>
                 </dl>
               </div>
             </div>
@@ -830,7 +830,7 @@ export default function LeasesPage() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Avg Rent</dt>
-                  <dd className="text-2xl font-semibold text-gray-900">${stats.avgRent.toLocaleString()}</dd>
+                  <dd className="text-2xl font-semibold text-gray-900">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(stats.avgRent)}</dd>
                 </dl>
               </div>
             </div>

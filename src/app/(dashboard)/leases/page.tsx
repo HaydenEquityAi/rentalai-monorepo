@@ -37,17 +37,17 @@ interface Lease {
 }
 
 const LEASE_STATUSES = [
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'ACTIVE', label: 'Active' },
-  { value: 'EXPIRED', label: 'Expired' },
-  { value: 'TERMINATED', label: 'Terminated' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'active', label: 'Active' },
+  { value: 'expired', label: 'Expired' },
+  { value: 'terminated', label: 'Terminated' },
 ];
 
 const STATUS_COLORS = {
-  PENDING: 'warning',
-  ACTIVE: 'success',
-  EXPIRED: 'secondary',
-  TERMINATED: 'destructive',
+  pending: 'warning',
+  active: 'success',
+  expired: 'secondary',
+  terminated: 'destructive',
 } as const;
 
 export default function LeasesPage() {
@@ -74,7 +74,7 @@ export default function LeasesPage() {
     end_date: '',
     monthly_rent: '',
     deposit_amount: '',
-    status: 'PENDING',
+    status: 'pending',
     rent_due_day: '1',
     late_fee_amount: '',
     late_fee_grace_days: '5',
@@ -189,7 +189,7 @@ export default function LeasesPage() {
       end_date: '',
       monthly_rent: '',
       deposit_amount: '',
-      status: 'PENDING',
+      status: 'pending',
       rent_due_day: '1',
       late_fee_amount: '',
       late_fee_grace_days: '5',
@@ -355,7 +355,7 @@ export default function LeasesPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const activeLeases = leases.filter(lease => lease.status === 'ACTIVE').length;
+    const activeLeases = leases.filter(lease => lease.status === 'active').length;
     const expiringSoon = leases.filter(lease => {
       const endDate = new Date(lease.end_date);
       const now = new Date();
@@ -363,7 +363,7 @@ export default function LeasesPage() {
       return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
     }).length;
     const totalMonthlyRevenue = leases
-      .filter(lease => lease.status === 'ACTIVE')
+      .filter(lease => lease.status === 'active')
       .reduce((sum, lease) => sum + lease.monthly_rent, 0);
     const avgRent = activeLeases > 0 ? totalMonthlyRevenue / activeLeases : 0;
 

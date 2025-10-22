@@ -89,11 +89,11 @@ query = select(Lease).options(
     )
 )
     
-    # Apply filters
-    if status:
-        query = query.where(Lease.status == status)
-    
-    if property_id:
+# Apply filters
+if status:
+    query = query.where(Lease.status == status)
+
+if property_id:
         query = query.join(Unit).where(Unit.property_id == property_id)
     
     if unit_id:

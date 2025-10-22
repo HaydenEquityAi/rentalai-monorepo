@@ -404,6 +404,16 @@ class LeaseCreate(LeaseBase):
     """Create lease"""
     unit_id: UUID
     application_id: Optional[UUID] = None
+    tenant_first_name: str
+    tenant_last_name: str
+    tenant_email: str
+    tenant_phone: str
+    deposit_amount: Decimal = Field(..., ge=0)
+    status: LeaseStatus = LeaseStatus.PENDING
+    rent_due_day: int = 1
+    late_fee_amount: Optional[Decimal] = Field(default=None, ge=0)
+    late_fee_grace_days: int = 5
+    auto_pay_enabled: bool = False
 
 
 class LeaseUpdate(BaseSchema):

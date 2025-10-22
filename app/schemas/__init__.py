@@ -299,6 +299,7 @@ class UnitCreate(UnitBase):
     floor: Optional[int] = None
     floor_plan: Optional[str] = None
     amenities: Optional[List[str]] = []               # ✅ ADDED
+    photos: Optional[List[str]] = []
 
 
 class UnitUpdate(BaseSchema):

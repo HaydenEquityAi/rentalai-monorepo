@@ -26,7 +26,7 @@ interface Unit {
   rent_amount: number;
   deposit_amount: number;
   status: string;
-  amenities?: string;
+  amenities?: string | string[];
 }
 
 const UNIT_STATUSES = [
@@ -159,7 +159,7 @@ export default function UnitsPage() {
           rent_amount: parseFloat(formData.rent_amount) || 0,
           deposit_amount: parseFloat(formData.deposit_amount) || 0,
           status: formData.status,
-          amenities: formData.amenities || undefined,
+          amenities: formData.amenities ? formData.amenities.split(',').map(a => a.trim()) : [],
         })
       });
 
@@ -202,7 +202,7 @@ export default function UnitsPage() {
           rent_amount: parseFloat(formData.rent_amount) || 0,
           deposit_amount: parseFloat(formData.deposit_amount) || 0,
           status: formData.status,
-          amenities: formData.amenities || undefined,
+          amenities: formData.amenities ? formData.amenities.split(',').map(a => a.trim()) : [],
         })
       });
 
@@ -265,7 +265,7 @@ export default function UnitsPage() {
       rent_amount: unit.rent_amount.toString(),
       deposit_amount: unit.deposit_amount.toString(),
       status: unit.status,
-      amenities: unit.amenities || '',
+      amenities: Array.isArray(unit.amenities) ? unit.amenities.join(', ') : (unit.amenities || ''),
     });
     setIsEditModalOpen(true);
   };

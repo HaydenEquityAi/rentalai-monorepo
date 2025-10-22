@@ -80,20 +80,18 @@ async def list_leases(
     """List leases with pagination and filters"""
     
     # Build query
-    query = select(Lease).options(
-        selectinload(Lease.unit).selectinload(Unit.property)
-    ).where(
+    query = select(Lease).where(
         and_(
             Lease.org_id == org_id,
             Lease.deleted_at.is_(None)
         )
     )
     
-# Apply filters
-if status:
-    query = query.where(Lease.status == status)
-
-if property_id:
+    # Apply filters
+    if status:
+        query = query.where(Lease.status == status)
+    
+    if property_id:
         query = query.join(Unit).where(Unit.property_id == property_id)
     
     if unit_id:
@@ -115,7 +113,7 @@ if property_id:
     leases = result.scalars().all()
     
     return PaginatedResponse(
-        items=[_enrich_lease_dict(lease) for lease in leases],
+        items=[LeaseResponse.model_validate(lease) for lease in leases],
         pagination={
             "page": (skip // limit) + 1,
             "page_size": limit,
@@ -127,7 +125,6 @@ if property_id:
     )
 
 
-@leases_router.post("/", response_model=LeaseResponse, status_code=status.HTTP_201_CREATED)
 async def create_lease(
     lease_data: LeaseCreate,
     org_id: str = Depends(get_current_org),

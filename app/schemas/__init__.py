@@ -550,7 +550,7 @@ class MaintenanceRequestResponse(MaintenanceRequestBase, TimestampSchema):
     id: UUID
     org_id: UUID
     unit_id: Optional[UUID] = None
-    reported_by: UUID
+    reported_by: Optional[UUID] = None
     assigned_to: Optional[UUID] = None
     vendor_name: Optional[str] = None
     vendor_contact: Optional[str] = None

@@ -179,6 +179,7 @@ class PropertyCreate(PropertyBase):
     total_units: Optional[int] = None
     total_sqft: Optional[int] = None
     square_footage: Optional[int] = None
+    lot_size: Optional[float] = None
     description: Optional[str] = None
 
 

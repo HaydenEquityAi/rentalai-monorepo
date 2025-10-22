@@ -24,6 +24,46 @@ from app.schemas import (
 # Initialize router
 leases_router = APIRouter()
 
+def _enrich_lease_dict(lease) -> dict:
+    """
+    Enrich lease response with computed fields for frontend compatibility
+    Adds: tenant_name, property_name, unit_number
+    """
+    from app.schemas import LeaseResponse
+    
+    # Convert to dict
+    lease_dict = {
+        "id": str(lease.id),
+        "org_id": str(lease.org_id),
+        "unit_id": str(lease.unit_id),
+        "tenant_first_name": lease.tenant_first_name,
+        "tenant_last_name": lease.tenant_last_name,
+        "tenant_email": lease.tenant_email,
+        "tenant_phone": lease.tenant_phone,
+        "start_date": lease.start_date.isoformat(),
+        "end_date": lease.end_date.isoformat(),
+        "monthly_rent": float(lease.monthly_rent),
+        "deposit_amount": float(lease.deposit_amount),
+        "status": lease.status.value if hasattr(lease.status, 'value') else str(lease.status),
+        "rent_due_day": lease.rent_due_day,
+        "late_fee_amount": float(lease.late_fee_amount) if lease.late_fee_amount else None,
+        "late_fee_grace_days": lease.late_fee_grace_days,
+        "auto_pay_enabled": lease.auto_pay_enabled,
+        "created_at": lease.created_at.isoformat(),
+        "updated_at": lease.updated_at.isoformat() if lease.updated_at else None,
+    }
+    
+    # Add computed fields for frontend
+    lease_dict['tenant_name'] = f"{lease.tenant_first_name} {lease.tenant_last_name}"
+    
+    # Add related data if loaded
+    if hasattr(lease, 'unit') and lease.unit:
+        lease_dict['unit_number'] = lease.unit.unit_number
+        if hasattr(lease.unit, 'property') and lease.unit.property:
+            lease_dict['property_name'] = lease.unit.property.name
+            lease_dict['property_id'] = str(lease.unit.property.id)
+    
+    return lease_dict
 
 @leases_router.get("/", response_model=PaginatedResponse)
 async def list_leases(
@@ -39,13 +79,15 @@ async def list_leases(
 ):
     """List leases with pagination and filters"""
     
-    # Build query
-    query = select(Lease).where(
-        and_(
-            Lease.org_id == org_id,
-            Lease.deleted_at.is_(None)
-        )
+    # Build query   
+query = select(Lease).options(
+    selectinload(Lease.unit).selectinload(Unit.property)
+).where(
+    and_(
+        Lease.org_id == org_id,
+        Lease.deleted_at.is_(None)
     )
+)
     
     # Apply filters
     if status:
@@ -73,7 +115,7 @@ async def list_leases(
     leases = result.scalars().all()
     
     return PaginatedResponse(
-        items=[LeaseResponse.model_validate(lease) for lease in leases],
+        items=[_enrich_lease_dict(lease) for lease in leases],
         pagination={
             "page": (skip // limit) + 1,
             "page_size": limit,
@@ -196,7 +238,7 @@ async def get_lease(
             detail="Lease not found"
         )
     
-    return LeaseResponse.model_validate(lease)
+    return _enrich_lease_dict(lease)
 
 
 @leases_router.put("/{lease_id}", response_model=LeaseResponse)
@@ -321,16 +363,17 @@ async def renew_lease(
     
     # Get lease
     result = await db.execute(
-        select(Lease).where(
-            and_(
-                Lease.id == lease_id,
-                Lease.org_id == org_id,
-                Lease.status == LeaseStatus.ACTIVE,
-                Lease.deleted_at.is_(None)
-            )
+        select(Lease).options(
+        selectinload(Lease.unit).selectinload(Unit.property)
+    ).where(
+        and_(
+            Lease.id == lease_id,
+            Lease.org_id == org_id,
+            Lease.deleted_at.is_(None)
         )
     )
-    lease = result.scalar_one_or_none()
+)
+lease = result.scalar_one_or_none()
     
     if not lease:
         raise HTTPException(

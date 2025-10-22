@@ -1,0 +1,18 @@
+# Apple Touch Icon Placeholder
+
+This file should be replaced with an actual Apple touch icon.
+
+## Requirements:
+- Format: PNG
+- Size: 180x180 pixels
+- Content: RentalAi logo or building icon
+- Background: Solid color or transparent
+
+## Suggested Content:
+- RentalAi logo
+- Blue background (#3b82f6)
+- Clean, professional design
+- Rounded corners (iOS will add them automatically)
+
+## File location:
+public/apple-touch-icon.png

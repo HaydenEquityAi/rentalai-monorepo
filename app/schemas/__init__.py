@@ -429,6 +429,15 @@ class LeaseResponse(LeaseBase, TimestampSchema):
     id: UUID
     org_id: UUID
     unit_id: UUID
+    tenant_first_name: str
+    tenant_last_name: str
+    tenant_email: str
+    tenant_phone: str
+    deposit_amount: Decimal
+    rent_due_day: int
+    late_fee_amount: Optional[Decimal]
+    late_fee_grace_days: int
+    auto_pay_enabled: bool
     status: LeaseStatus
     signed_at: Optional[datetime] = None
 

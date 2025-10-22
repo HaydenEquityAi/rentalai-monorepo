@@ -125,6 +125,7 @@ async def list_leases(
     )
 
 
+@leases_router.post("/", response_model=LeaseResponse, status_code=status.HTTP_201_CREATED)
 async def create_lease(
     lease_data: LeaseCreate,
     org_id: str = Depends(get_current_org),

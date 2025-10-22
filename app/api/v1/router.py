@@ -18,6 +18,8 @@ from app.api.v1.leads import leads_router
 from app.api.v1.maintenance import maintenance_router
 from app.api.v1.payments import payments_router
 from app.api.v1.billing import billing_router
+from app.api.v1.analytics import analytics_router
+from app.api.v1.users import users_router
 
 # Include routers
 api_router.include_router(auth_router)
@@ -29,6 +31,8 @@ api_router.include_router(leads_router, prefix="/leads", tags=["leads"])
 api_router.include_router(maintenance_router, prefix="/maintenance", tags=["maintenance"])
 api_router.include_router(payments_router, prefix="/payments", tags=["payments"])
 api_router.include_router(billing_router, prefix="/billing", tags=["billing"])
+api_router.include_router(analytics_router)
+api_router.include_router(users_router)
 
 # For now, let's add a simple health check endpoint
 @api_router.get("/health")

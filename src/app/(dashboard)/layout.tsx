@@ -11,6 +11,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Building2,
+  Home,
   Users,
   FileText,
   Wrench,
@@ -38,6 +39,7 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Properties', href: '/properties', icon: Building2 },
+  { name: 'Units', href: '/units', icon: Home },
   { name: 'Leads & CRM', href: '/leads', icon: Users },
   { name: 'Leases', href: '/leases', icon: FileText },
   { name: 'Maintenance', href: '/maintenance', icon: Wrench, badge: 5 },

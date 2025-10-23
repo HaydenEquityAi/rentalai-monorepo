@@ -37,6 +37,7 @@ class Settings(BaseSettings):
         "https://rentalai.ai",
         "https://www.rentalai.ai",
         "https://rental-ai-frontend.vercel.app",
+        "https://rentalai-monorepo.vercel.app",
     ]
     ALLOWED_HOSTS: List[str] = ["*"]
     

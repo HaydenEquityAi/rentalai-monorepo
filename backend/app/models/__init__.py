@@ -170,6 +170,7 @@ class Organization(Base):
     owners: Mapped[List["Owner"]] = relationship("Owner", back_populates="organization")
     leads: Mapped[List["Lead"]] = relationship("Lead", back_populates="organization")
     subscription: Mapped[Optional["Subscription"]] = relationship("Subscription", back_populates="organization", uselist=False)
+    accounts: Mapped[List["Account"]] = relationship("Account", back_populates="organization")
     
     __table_args__ = (
         Index("idx_org_slug", "slug"),
@@ -590,3 +591,16 @@ class AIJob(Base):
 
 # Import Subscription model
 from app.models.subscription import Subscription, SubscriptionPlan, SubscriptionStatus
+
+# Accounting models
+from app.models.accounting import (
+    Account,
+    Transaction,
+    Budget,
+    Vendor,
+    Invoice,
+    InvoiceLineItem,
+    BankAccount,
+    AccountType,
+    TransactionType,
+)

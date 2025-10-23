@@ -1,0 +1,29 @@
+[Unit]
+Description=RentalAI Backend API
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=exec
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/rentalai-monorepo/backend
+Environment=PATH=/var/www/rentalai-monorepo/backend/venv/bin
+ExecStart=/var/www/rentalai-monorepo/backend/venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 127.0.0.1:8000 --access-logfile - --error-logfile -
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=3
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/rentalai-monorepo/backend
+ReadWritePaths=/var/log/rentalai
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

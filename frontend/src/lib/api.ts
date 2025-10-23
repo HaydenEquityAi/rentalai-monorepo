@@ -237,3 +237,11 @@ export const aiAPI = {
     return response;
   }
 };
+
+// Accounting API
+export const accountingApi = {
+  getAccounts: () => apiClient.get('/accounting/accounts'),
+  createAccount: (data: any) => apiClient.post('/accounting/accounts', data),
+  getTransactions: () => apiClient.get('/accounting/transactions'),
+  createTransaction: (data: any) => apiClient.post('/accounting/transactions', data),
+};

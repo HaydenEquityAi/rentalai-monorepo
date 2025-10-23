@@ -62,7 +62,7 @@ export default function AccountingPage() {
                 <div className="flex justify-between">
                   <span className="font-medium">${transaction.amount}</span>
                   <span className={`text-sm px-2 py-1 rounded ${
-                    transaction.transaction_type === 'DEBIT' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                    transaction.transaction_type === 'debit' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                   }`}>
                     {transaction.transaction_type}
                   </span>

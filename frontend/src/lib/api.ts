@@ -244,4 +244,12 @@ export const accountingApi = {
   createAccount: (data: any) => apiClient.post('/accounting/accounts', data),
   getTransactions: () => apiClient.get('/accounting/transactions'),
   createTransaction: (data: any) => apiClient.post('/accounting/transactions', data),
+  getProfitLoss: (startDate: string, endDate: string, propertyId?: string) => {
+    const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+    if (propertyId) params.append('property_id', propertyId);
+    return apiClient.get(`/accounting/reports/profit-loss?${params}`);
+  },
+  getBalanceSheet: (asOfDate: string) => {
+    return apiClient.get(`/accounting/reports/balance-sheet?as_of_date=${asOfDate}`);
+  },
 };

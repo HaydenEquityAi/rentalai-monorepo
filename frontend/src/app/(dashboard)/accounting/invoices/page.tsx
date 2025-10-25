@@ -461,7 +461,7 @@ export default function InvoicesPage() {
 
   // Get status color
   const getStatusColor = (status: string, dueDate: string): string => {
-    if (status === 'PAID') {
+    if (status === 'paid') {
       return 'bg-green-100 text-green-800 border-green-200';
     }
     
@@ -476,7 +476,7 @@ export default function InvoicesPage() {
 
   // Get status text
   const getStatusText = (status: string, dueDate: string): string => {
-    if (status === 'PAID') {
+    if (status === 'paid') {
       return 'Paid';
     }
     

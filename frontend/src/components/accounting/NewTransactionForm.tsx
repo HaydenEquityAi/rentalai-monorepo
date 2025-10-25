@@ -109,9 +109,9 @@ export function NewTransactionForm({ onSuccess, onCancel }: NewTransactionFormPr
         ...data,
         transaction_date: data.transaction_date.toISOString(),
         amount: data.amount,
-        vendor_id: data.vendor_id || null,
-        reference_number: data.reference_number || null,
-        notes: data.notes || null
+        vendor_id: data.vendor_id || undefined,
+        reference_number: data.reference_number || undefined,
+        notes: data.notes || undefined
       };
 
       await accountingService.createTransaction(transactionData);

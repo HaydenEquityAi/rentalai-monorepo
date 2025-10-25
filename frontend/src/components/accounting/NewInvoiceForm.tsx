@@ -24,6 +24,8 @@ import {
 
 const lineItemSchema = z.object({
   description: z.string().min(1, 'Description is required'),
+  quantity: z.string().min(1, 'Quantity is required'),
+  unit_price: z.string().min(1, 'Unit price is required'),
   amount: z.string().min(1, 'Amount is required'),
   account_id: z.string().min(1, 'Account is required')
 });
@@ -64,7 +66,7 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
       invoice_date: new Date(),
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       status: 'draft',
-      line_items: [{ description: '', amount: '0.00', account_id: '' }]
+      line_items: [{ description: '', quantity: '1', unit_price: '0.00', amount: '0.00', account_id: '' }]
     }
   });
 
@@ -107,7 +109,9 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
         invoice_date: data.invoice_date.toISOString(),
         due_date: data.due_date.toISOString(),
         line_items: data.line_items.map(item => ({
-          ...item,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
           amount: item.amount
         })),
         notes: data.notes || null
@@ -290,7 +294,7 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {fields.map((field, index) => (
-            <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
+            <div key={field.id} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg">
               <div className="space-y-2">
                 <Label htmlFor={`line_items.${index}.description`}>Description *</Label>
                 <Input
@@ -299,6 +303,32 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
                 />
                 {errors.line_items?.[index]?.description && (
                   <p className="text-sm text-red-600">{errors.line_items[index]?.description?.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`line_items.${index}.quantity`}>Quantity *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="1"
+                  {...register(`line_items.${index}.quantity`)}
+                />
+                {errors.line_items?.[index]?.quantity && (
+                  <p className="text-sm text-red-600">{errors.line_items[index]?.quantity?.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`line_items.${index}.unit_price`}>Unit Price *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...register(`line_items.${index}.unit_price`)}
+                />
+                {errors.line_items?.[index]?.unit_price && (
+                  <p className="text-sm text-red-600">{errors.line_items[index]?.unit_price?.message}</p>
                 )}
               </div>
 
@@ -333,8 +363,6 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
                   <p className="text-sm text-red-600">{errors.line_items[index]?.amount?.message}</p>
                 )}
               </div>
-
-              <div className="flex items-end">
                 <Button
                   type="button"
                   variant="outline"

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { Plus, FileText, AlertCircle, Edit, Trash2, MoreHorizontal, Eye, RotateCcw, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -62,7 +60,6 @@ export default function LeasesPage() {
   const [editingLease, setEditingLease] = useState<Lease | null>(null);
   const [deletingLeaseId, setDeletingLeaseId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<Lease[]>([]);
 
   const [formData, setFormData] = useState({
     unit_id: '',
@@ -376,132 +373,75 @@ export default function LeasesPage() {
   }, [leases]);
 
 
-  const columns: ColumnDef<Lease>[] = useMemo(
+  const columns: Column<Lease>[] = useMemo(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
-        accessorKey: "property_name",
-        header: "Property/Unit",
-        cell: ({ row }) => (
+        key: 'property_name',
+        label: 'Property/Unit',
+        sortable: true,
+        filterable: true,
+        render: (value: string, lease: Lease) => (
           <div>
-            <div className="font-medium">{row.getValue("property_name")}</div>
-            <div className="text-sm text-gray-500">Unit {row.original.unit_number}</div>
+            <div className="font-medium">{value}</div>
+            <div className="text-sm text-gray-500">Unit {lease.unit_number}</div>
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "tenant_first_name",
-        header: "Tenant Name",
-        cell: ({ row }) => (
+        key: 'tenant_first_name',
+        label: 'Tenant Name',
+        sortable: true,
+        filterable: true,
+        render: (value: string, lease: Lease) => (
           <div className="font-medium">
-            {`${row.original.tenant_first_name} ${row.original.tenant_last_name}`}
+            {`${lease.tenant_first_name} ${lease.tenant_last_name}`}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "start_date",
-        header: "Start Date",
-        cell: ({ row }) => {
-          const date = new Date(row.getValue("start_date"));
+        key: 'start_date',
+        label: 'Start Date',
+        sortable: true,
+        render: (value: string) => {
+          const date = new Date(value);
           return date.toLocaleDateString();
-        },
+        }
       },
       {
-        accessorKey: "end_date",
-        header: "End Date",
-        cell: ({ row }) => {
-          const date = new Date(row.getValue("end_date"));
+        key: 'end_date',
+        label: 'End Date',
+        sortable: true,
+        render: (value: string) => {
+          const date = new Date(value);
           return date.toLocaleDateString();
-        },
+        }
       },
       {
-        accessorKey: "monthly_rent",
-        header: "Monthly Rent",
-        cell: ({ row }) => (
+        key: 'monthly_rent',
+        label: 'Monthly Rent',
+        sortable: true,
+        render: (value: number) => (
           <div className="text-right font-medium">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(row.getValue("monthly_rent") || 0)}
+            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value || 0)}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.getValue("status") as string;
-          const color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'default';
-          const label = LEASE_STATUSES.find(s => s.value === status)?.label || status;
+        key: 'status',
+        label: 'Status',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => {
+          const color = STATUS_COLORS[value as keyof typeof STATUS_COLORS] || 'default';
+          const label = LEASE_STATUSES.find(s => s.value === value)?.label || value;
           
           return (
             <Badge variant={color as any}>
               {label}
             </Badge>
           );
-        },
-      },
-      {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => {
-          const lease = row.original;
-
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openEditModal(lease)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Renew
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <X className="mr-2 h-4 w-4" />
-                  Terminate
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => openDeleteModal(lease.id)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
-      },
+        }
+      }
     ],
     []
   );
@@ -840,10 +780,25 @@ export default function LeasesPage() {
 
       <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
         <DataTable
-          columns={columns}
           data={leases}
-          searchKey="leases"
-          onRowSelectionChange={setSelectedRows}
+          columns={columns}
+          searchable={true}
+          filterable={true}
+          sortable={true}
+          pagination={true}
+          pageSize={10}
+          exportable={true}
+          onExport={() => {
+            // Export functionality
+            console.log('Exporting leases...');
+          }}
+          actions={{
+            view: (lease) => console.log('View lease:', lease),
+            edit: (lease) => openEditModal(lease),
+            delete: (lease) => openDeleteModal(lease.id)
+          }}
+          loading={loading}
+          emptyMessage="No leases found"
         />
       </div>
 

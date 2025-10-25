@@ -76,6 +76,7 @@ export interface Invoice extends BaseEntity {
   amount_paid: string; // Decimal as string
   status: string;
   notes?: string;
+  line_items?: InvoiceLineItem[]; // Optional array of line items
 }
 
 // Invoice Line Item interface

@@ -253,9 +253,9 @@ export default function HUDComplianceDashboard() {
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
       return {
-        property: cert.property_name || 'Unknown Property',
-        unit: cert.unit_number || 'N/A',
-        tenant: cert.tenant_name || 'Unknown Tenant',
+        property: `Property ${cert.property_id}`,
+        unit: cert.unit_id ? `Unit ${cert.unit_id}` : 'N/A',
+        tenant: `Tenant ${cert.tenant_id}`,
         type: cert.certification_type,
         status: cert.certification_status,
         effectiveDate: cert.effective_date,
@@ -268,7 +268,7 @@ export default function HUDComplianceDashboard() {
   // Generate inspection summary
   const generateInspectionSummary = (insp: REACInspection[]): InspectionSummary[] => {
     return insp.map(inspection => ({
-      property: inspection.property_name || 'Unknown Property',
+      property: `Property ${inspection.property_id}`,
       inspectionDate: inspection.inspection_date,
       type: inspection.inspection_type,
       overallScore: inspection.overall_score,

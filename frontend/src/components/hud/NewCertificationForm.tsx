@@ -36,7 +36,7 @@ const certificationSchema = z.object({
   tenant_rent_portion: z.string().min(1, 'Tenant rent portion is required'),
   utility_allowance: z.string().min(1, 'Utility allowance is required'),
   subsidy_amount: z.string().min(1, 'Subsidy amount is required'),
-  certification_status: z.enum(['draft', 'submitted', 'approved', 'rejected'] as const),
+  certification_status: z.enum(['pending', 'submitted', 'approved', 'rejected'] as const),
   notes: z.string().optional()
 });
 
@@ -66,7 +66,7 @@ export function NewCertificationForm({ onSuccess, onCancel }: NewCertificationFo
     resolver: zodResolver(certificationSchema),
     defaultValues: {
       cert_type: 'annual',
-      certification_status: 'draft',
+      certification_status: 'pending',
       household_size: 1,
       annual_income: '0',
       adjusted_income: '0',
@@ -340,7 +340,7 @@ export function NewCertificationForm({ onSuccess, onCancel }: NewCertificationFo
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="submitted">Submitted</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>

@@ -26,10 +26,10 @@ import {
 const inspectionSchema = z.object({
   property_id: z.string().min(1, 'Property is required'),
   inspection_date: z.date({ required_error: 'Inspection date is required' }),
-  inspection_type: z.enum(['initial', 'annual', 'special'] as const),
+  inspection_type: z.enum(['initial', 'annual', 'complaint', 'special'] as const),
   inspector_name: z.string().min(1, 'Inspector name is required'),
   overall_score: z.number().min(0).max(100).optional(),
-  inspection_status: z.enum(['scheduled', 'in_progress', 'completed', 'failed'] as const),
+  inspection_status: z.enum(['passed', 'failed', 'conditional', 'pending'] as const),
   deficiencies_count: z.number().min(0).optional(),
   notes: z.string().optional()
 });
@@ -57,7 +57,7 @@ export function NewInspectionForm({ onSuccess, onCancel }: NewInspectionFormProp
     resolver: zodResolver(inspectionSchema),
     defaultValues: {
       inspection_type: 'annual',
-      inspection_status: 'scheduled',
+      inspection_status: 'pending',
       overall_score: undefined,
       deficiencies_count: 0
     }
@@ -89,7 +89,7 @@ export function NewInspectionForm({ onSuccess, onCancel }: NewInspectionFormProp
       const inspectionData: CreateREACInspectionRequest = {
         ...data,
         inspection_date: data.inspection_date.toISOString(),
-        overall_score: data.overall_score || null,
+        overall_score: data.overall_score || undefined,
         deficiencies_count: data.deficiencies_count || 0
       };
 
@@ -158,6 +158,7 @@ export function NewInspectionForm({ onSuccess, onCancel }: NewInspectionFormProp
               <SelectItem value="initial">Initial</SelectItem>
               <SelectItem value="annual">Annual</SelectItem>
               <SelectItem value="special">Special</SelectItem>
+              <SelectItem value="complaint">Complaint</SelectItem>
             </SelectContent>
           </Select>
           {errors.inspection_type && (
@@ -247,10 +248,10 @@ export function NewInspectionForm({ onSuccess, onCancel }: NewInspectionFormProp
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="passed">Passed</SelectItem>
               <SelectItem value="failed">Failed</SelectItem>
+              <SelectItem value="conditional">Conditional</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
             </SelectContent>
           </Select>
           {errors.inspection_status && (

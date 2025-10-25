@@ -110,15 +110,15 @@ export default function AccountingDashboard() {
   // Calculate key metrics from accounts
   const calculateMetrics = (accounts: Account[]): DashboardMetrics => {
     const assets = accounts
-      .filter(acc => acc.account_type === 'ASSET')
+      .filter(acc => acc.account_type === 'asset')
       .reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
 
     const revenue = accounts
-      .filter(acc => acc.account_type === 'REVENUE')
+      .filter(acc => acc.account_type === 'revenue')
       .reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
 
     const expenses = accounts
-      .filter(acc => acc.account_type === 'EXPENSE')
+      .filter(acc => acc.account_type === 'expense')
       .reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
 
     const netIncome = revenue - expenses;
@@ -165,9 +165,9 @@ export default function AccountingDashboard() {
       
       if (monthIndex !== -1) {
         const amount = parseFloat(transaction.amount);
-        if (transaction.transaction_type === 'INCOME') {
+        if (transaction.transaction_type === 'credit') {
           months[monthIndex].revenue += amount;
-        } else if (transaction.transaction_type === 'EXPENSE') {
+        } else if (transaction.transaction_type === 'debit') {
           months[monthIndex].expenses += amount;
         }
       }
@@ -222,15 +222,15 @@ export default function AccountingDashboard() {
   // Get account type color
   const getAccountTypeColor = (type: AccountType): string => {
     switch (type) {
-      case 'ASSET':
+      case 'asset':
         return 'bg-blue-100 text-blue-800';
-      case 'LIABILITY':
+      case 'liability':
         return 'bg-red-100 text-red-800';
-      case 'EQUITY':
+      case 'equity':
         return 'bg-green-100 text-green-800';
-      case 'REVENUE':
+      case 'revenue':
         return 'bg-emerald-100 text-emerald-800';
-      case 'EXPENSE':
+      case 'expense':
         return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -240,12 +240,10 @@ export default function AccountingDashboard() {
   // Get transaction type color
   const getTransactionTypeColor = (type: TransactionType): string => {
     switch (type) {
-      case 'INCOME':
+      case 'credit':
         return 'bg-green-100 text-green-800';
-      case 'EXPENSE':
+      case 'debit':
         return 'bg-red-100 text-red-800';
-      case 'TRANSFER':
-        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -483,7 +481,7 @@ export default function AccountingDashboard() {
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{account.name}</span>
+                        <span className="font-medium">{account.account_name}</span>
                       </div>
                       <Badge className={getAccountTypeColor(account.account_type)}>
                         {account.account_type}
@@ -531,9 +529,9 @@ export default function AccountingDashboard() {
                     </div>
                     <div className="text-right">
                       <div className={`font-semibold ${
-                        transaction.transaction_type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                        transaction.transaction_type === 'credit' ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {transaction.transaction_type === 'INCOME' ? '+' : '-'}
+                        {transaction.transaction_type === 'credit' ? '+' : '-'}
                         {formatCurrency(parseFloat(transaction.amount))}
                       </div>
                       <div className="text-sm text-muted-foreground">

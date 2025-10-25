@@ -272,7 +272,7 @@ export default function HUDComplianceDashboard() {
       inspectionDate: inspection.inspection_date,
       type: inspection.inspection_type,
       overallScore: inspection.overall_score ?? 0,
-      status: inspection.status,
+      status: inspection.inspection_status,
       deficiencies: inspection.deficiencies_count || 0
     }));
   };
@@ -699,8 +699,8 @@ export default function HUDComplianceDashboard() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getInspectionStatusColor(inspection.status)}>
-                            {inspection.status}
+                          <Badge className={getInspectionStatusColor(inspection.inspection_status)}>
+                            {inspection.inspection_status}
                           </Badge>
                         </TableCell>
                         <TableCell>

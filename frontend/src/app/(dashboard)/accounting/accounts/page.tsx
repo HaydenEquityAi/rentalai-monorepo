@@ -94,7 +94,7 @@ export default function ChartOfAccountsPage() {
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
       filtered = filtered.filter(account => 
-        account.name.toLowerCase().includes(searchTerm) ||
+        account.account_name.toLowerCase().includes(searchTerm) ||
         account.account_number.toLowerCase().includes(searchTerm) ||
         account.description?.toLowerCase().includes(searchTerm)
       );
@@ -215,7 +215,7 @@ export default function ChartOfAccountsPage() {
     setSelectedAccount(account);
     setFormData({
       account_number: account.account_number,
-      name: account.name,
+      name: account.account_name,
       account_type: account.account_type,
       description: account.description || '',
       is_active: account.is_active
@@ -497,7 +497,7 @@ export default function ChartOfAccountsPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{getAccountTypeIcon(account.account_type)}</span>
                         <div>
-                          <div className="font-medium">{account.name}</div>
+                          <div className="font-medium">{account.account_name}</div>
                           {account.description && (
                             <div className="text-sm text-muted-foreground">
                               {account.description}
@@ -647,7 +647,7 @@ export default function ChartOfAccountsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Account</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{selectedAccount?.name}"? This action cannot be undone.
+              Are you sure you want to delete "{selectedAccount?.account_name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

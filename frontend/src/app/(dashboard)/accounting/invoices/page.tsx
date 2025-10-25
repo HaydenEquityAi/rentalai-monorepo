@@ -37,7 +37,8 @@ import {
   CreateInvoiceRequest, 
   UpdateInvoiceRequest, 
   CreateInvoiceLineItemRequest,
-  MarkInvoicePaidRequest 
+  MarkInvoicePaidRequest,
+  InvoiceStatus
 } from '@/types/accounting';
 
 // Form data interfaces (without backend-generated fields)
@@ -60,7 +61,7 @@ interface InvoiceFormData {
 
 interface InvoiceFilters {
   search: string;
-  status: 'ALL' | 'pending' | 'paid' | 'overdue';
+  status: 'ALL' | InvoiceStatus;
   vendor_id: string;
   date_from: string;
   date_to: string;
@@ -318,7 +319,7 @@ export default function InvoicesPage() {
         tax_amount: formData.tax_amount,
         total_amount: total,
         amount_paid: '0',
-        status: 'pending',
+        status: 'draft',
         notes: formData.notes || undefined,
         line_items: formData.line_items.map(item => ({
           description: item.description,
@@ -780,9 +781,11 @@ export default function InvoicesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
                   <SelectItem value="paid">Paid</SelectItem>
                   <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>

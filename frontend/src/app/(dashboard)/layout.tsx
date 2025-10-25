@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { authAPI } from '@/lib/api';
+import { ToastProvider } from '@/components/ui/toast';
 
 interface NavItem {
   name: string;
@@ -81,7 +82,8 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
+    <ToastProvider>
+      <div className="h-screen flex overflow-hidden bg-gray-50">
       {/* Sidebar for mobile */}
       {sidebarOpen && (
         <div className="fixed inset-0 flex z-40 lg:hidden">
@@ -184,6 +186,7 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }
 

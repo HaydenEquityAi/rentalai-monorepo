@@ -194,27 +194,6 @@ export default function PropertiesPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedRows.length === 0) return;
-
-    setSubmitting(true);
-
-    try {
-      const deletePromises = selectedRows.map(property =>
-        propertiesAPI.delete(property.id)
-      );
-
-      await Promise.all(deletePromises);
-      toast.success(`${selectedRows.length} properties deleted successfully!`);
-      setSelectedRows([]);
-      fetchProperties();
-    } catch (err: any) {
-      toast.error('Failed to delete selected properties');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const openEditModal = (property: Property) => {
     setEditingProperty(property);
     setFormData({

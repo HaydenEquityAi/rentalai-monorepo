@@ -114,7 +114,7 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
           unit_price: item.unit_price,
           amount: item.amount
         })),
-        notes: data.notes || null
+        notes: data.notes || undefined
       };
 
       await accountingService.createInvoice(invoiceData);

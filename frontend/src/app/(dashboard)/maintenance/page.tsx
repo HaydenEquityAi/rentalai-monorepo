@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { Plus, Wrench, AlertCircle, Edit, Trash2, MoreHorizontal, Eye, User, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -80,7 +79,6 @@ export default function MaintenancePage() {
   const [editingRequest, setEditingRequest] = useState<MaintenanceRequest | null>(null);
   const [deletingRequestId, setDeletingRequestId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<MaintenanceRequest[]>([]);
 
   const [formData, setFormData] = useState({
     unit_id: '',
@@ -351,155 +349,100 @@ export default function MaintenancePage() {
   }, [requests]);
 
 
-  const columns: ColumnDef<MaintenanceRequest>[] = useMemo(
+  const columns: Column<MaintenanceRequest>[] = useMemo(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
-        accessorKey: "request_id",
-        header: "Request ID",
-        cell: ({ row }) => (
+        key: 'request_id',
+        label: 'Request ID',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => (
           <div className="font-mono text-sm">
-            #{row.getValue("request_id")?.toString().substring(0, 8)}
+            #{value?.toString().substring(0, 8)}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "property_name",
-        header: "Property/Unit",
-        cell: ({ row }) => (
+        key: 'property_name',
+        label: 'Property/Unit',
+        sortable: true,
+        filterable: true,
+        render: (value: string, request: MaintenanceRequest) => (
           <div>
-            <div className="font-medium">{row.getValue("property_name")}</div>
-            {row.original.unit_number && (
-              <div className="text-sm text-gray-500">Unit {row.original.unit_number}</div>
+            <div className="font-medium">{value}</div>
+            {request.unit_number && (
+              <div className="text-sm text-gray-500">Unit {request.unit_number}</div>
             )}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "title",
-        header: "Title",
-        cell: ({ row }) => (
+        key: 'title',
+        label: 'Title',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => (
           <div className="max-w-[200px] truncate">
-            {row.getValue("title")}
+            {value}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "category",
-        header: "Category",
-        cell: ({ row }) => {
-          const category = row.getValue("category") as string;
-          const label = CATEGORIES.find(c => c.value === category)?.label || category;
+        key: 'category',
+        label: 'Category',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => {
+          const label = CATEGORIES.find(c => c.value === value)?.label || value;
           
           return (
             <Badge variant="outline">
               {label}
             </Badge>
           );
-        },
+        }
       },
       {
-        accessorKey: "priority",
-        header: "Priority",
-        cell: ({ row }) => {
-          const priority = row.getValue("priority") as string;
-          const color = PRIORITY_COLORS[priority as keyof typeof PRIORITY_COLORS] || 'default';
-          const label = PRIORITIES.find(p => p.value === priority)?.label || priority;
+        key: 'priority',
+        label: 'Priority',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => {
+          const color = PRIORITY_COLORS[value as keyof typeof PRIORITY_COLORS] || 'default';
+          const label = PRIORITIES.find(p => p.value === value)?.label || value;
           
           return (
             <Badge variant={color as any}>
               {label}
             </Badge>
           );
-        },
+        }
       },
       {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.getValue("status") as string;
-          const color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'default';
-          const label = STATUSES.find(s => s.value === status)?.label || status;
+        key: 'status',
+        label: 'Status',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => {
+          const color = STATUS_COLORS[value as keyof typeof STATUS_COLORS] || 'default';
+          const label = STATUSES.find(s => s.value === value)?.label || value;
           
           return (
             <Badge variant={color as any}>
               {label}
             </Badge>
           );
-        },
+        }
       },
       {
-        accessorKey: "created_at",
-        header: "Submitted Date",
-        cell: ({ row }) => {
-          const date = new Date(row.getValue("created_at"));
+        key: 'created_at',
+        label: 'Submitted Date',
+        sortable: true,
+        render: (value: string) => {
+          const date = new Date(value);
           return date.toLocaleDateString();
-        },
-      },
-      {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => {
-          const request = row.original;
-
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openEditModal(request)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Update Status
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  Assign
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => openDeleteModal(request.id)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
-      },
+        }
+      }
     ],
     []
   );
@@ -751,10 +694,25 @@ export default function MaintenancePage() {
 
       <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
         <DataTable
-          columns={columns}
           data={requests}
-          searchKey="maintenance requests"
-          onRowSelectionChange={setSelectedRows}
+          columns={columns}
+          searchable={true}
+          filterable={true}
+          sortable={true}
+          pagination={true}
+          pageSize={10}
+          exportable={true}
+          onExport={() => {
+            // Export functionality
+            console.log('Exporting maintenance requests...');
+          }}
+          actions={{
+            view: (request) => console.log('View request:', request),
+            edit: (request) => openEditModal(request),
+            delete: (request) => openDeleteModal(request.id)
+          }}
+          loading={loading}
+          emptyMessage="No maintenance requests found"
         />
       </div>
 

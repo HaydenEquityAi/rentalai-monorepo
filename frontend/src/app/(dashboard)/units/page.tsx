@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { Plus, Home, AlertCircle, Edit, Trash2, MoreHorizontal, Eye, RotateCcw, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -54,7 +53,6 @@ export default function UnitsPage() {
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [deletingUnitId, setDeletingUnitId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<Unit[]>([]);
 
   const [formData, setFormData] = useState({
     property_id: '',
@@ -300,119 +298,66 @@ export default function UnitsPage() {
     };
   }, [units]);
 
-  const columns: ColumnDef<Unit>[] = useMemo(
+  const columns: Column<Unit>[] = useMemo(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
-        accessorKey: "unit_number",
-        header: "Unit #",
-        cell: ({ row }) => (
+        key: 'unit_number',
+        label: 'Unit #',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => (
           <div className="font-medium">
-            {row.getValue("unit_number")}
+            {value}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "property_name",
-        header: "Property",
-        cell: ({ row }) => {
-          const unit = row.original;
-          return (
-            <div className="font-medium">
-              {getPropertyName(unit.property_id)}
-            </div>
-          );
-        },
+        key: 'property_name',
+        label: 'Property',
+        sortable: true,
+        filterable: true,
+        render: (value: string, unit: Unit) => (
+          <div className="font-medium">
+            {getPropertyName(unit.property_id)}
+          </div>
+        )
       },
       {
-        accessorKey: "bedrooms",
-        header: "Beds/Baths",
-        cell: ({ row }) => (
+        key: 'bedrooms',
+        label: 'Beds/Baths',
+        sortable: true,
+        render: (value: number, unit: Unit) => (
           <div className="text-sm">
-            {row.original.bedrooms} bed / {row.original.bathrooms} bath
+            {unit.bedrooms} bed / {unit.bathrooms} bath
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "rent_amount",
-        header: "Rent",
-        cell: ({ row }) => (
+        key: 'rent_amount',
+        label: 'Rent',
+        sortable: true,
+        render: (value: number) => (
           <div className="text-right font-medium">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(row.getValue("rent_amount") || 0)}
+            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value || 0)}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.getValue("status") as string;
-          const color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'default';
-          const label = UNIT_STATUSES.find(s => s.value === status)?.label || status;
+        key: 'status',
+        label: 'Status',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => {
+          const color = STATUS_COLORS[value as keyof typeof STATUS_COLORS] || 'default';
+          const label = UNIT_STATUSES.find(s => s.value === value)?.label || value;
           
           return (
             <Badge variant={color as any}>
               {label}
             </Badge>
           );
-        },
-      },
-      {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => {
-          const unit = row.original;
-
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openEditModal(unit)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => openDeleteModal(unit.id)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
-      },
+        }
+      }
     ],
     []
   );
@@ -700,10 +645,25 @@ export default function UnitsPage() {
 
       <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
         <DataTable
-          columns={columns}
           data={units}
-          searchKey="units"
-          onRowSelectionChange={setSelectedRows}
+          columns={columns}
+          searchable={true}
+          filterable={true}
+          sortable={true}
+          pagination={true}
+          pageSize={10}
+          exportable={true}
+          onExport={() => {
+            // Export functionality
+            console.log('Exporting units...');
+          }}
+          actions={{
+            view: (unit) => console.log('View unit:', unit),
+            edit: (unit) => openEditModal(unit),
+            delete: (unit) => openDeleteModal(unit.id)
+          }}
+          loading={loading}
+          emptyMessage="No units found"
         />
       </div>
 

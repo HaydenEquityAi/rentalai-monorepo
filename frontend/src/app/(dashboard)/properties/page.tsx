@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { propertiesAPI } from '@/lib/api';
 import { Plus, Building2, MapPin, AlertCircle, Edit, Trash2, MoreHorizontal, Eye, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -60,7 +59,6 @@ export default function PropertiesPage() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [deletingPropertyId, setDeletingPropertyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<Property[]>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -239,141 +237,75 @@ export default function PropertiesPage() {
   };
 
 
-  const columns: ColumnDef<Property>[] = useMemo(
+  const columns: Column<Property>[] = useMemo(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
-        accessorKey: "name",
-        header: "Property Name",
-        cell: ({ row }) => (
+        key: 'name',
+        label: 'Property Name',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => (
           <div className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer">
-            {row.getValue("name")}
+            {value}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "address_line1",
-        header: "Address",
-        cell: ({ row }) => (
+        key: 'address_line1',
+        label: 'Address',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => (
           <div className="max-w-[200px] truncate">
-            {row.getValue("address_line1")}
+            {value}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "city",
-        header: "City",
+        key: 'city',
+        label: 'City',
+        sortable: true,
+        filterable: true
       },
       {
-        accessorKey: "total_units",
-        header: "Units",
-        cell: ({ row }) => (
+        key: 'total_units',
+        label: 'Units',
+        sortable: true,
+        render: (value: number) => (
           <div className="text-center">
-            {row.getValue("total_units") || 0}
+            {value || 0}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "property_type",
-        header: "Type",
-        cell: ({ row }) => {
-          const type = row.getValue("property_type") as string;
-          const color = PROPERTY_TYPE_COLORS[type as keyof typeof PROPERTY_TYPE_COLORS] || 'default';
-          const label = PROPERTY_TYPES.find(t => t.value === type)?.label || type;
+        key: 'property_type',
+        label: 'Type',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => {
+          const color = PROPERTY_TYPE_COLORS[value as keyof typeof PROPERTY_TYPE_COLORS] || 'default';
+          const label = PROPERTY_TYPES.find(t => t.value === value)?.label || value;
           
           return (
             <Badge variant={color as any}>
               {label}
             </Badge>
           );
-        },
+        }
       },
       {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.getValue("status") as string;
-          return (
-            <Badge variant={status === 'active' ? 'default' : 'secondary'}>
-              {status === 'active' ? 'Active' : 'Inactive'}
-            </Badge>
-          );
-        },
-      },
-      {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => {
-          const property = row.original;
-
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openEditModal(property)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  View Analytics
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => openDeleteModal(property.id)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
-      },
+        key: 'status',
+        label: 'Status',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => (
+          <Badge variant={value === 'active' ? 'default' : 'secondary'}>
+            {value === 'active' ? 'Active' : 'Inactive'}
+          </Badge>
+        )
+      }
     ],
     []
-  );
-
-  const bulkActions = (
-    <Button
-      variant="destructive"
-      size="sm"
-      onClick={handleBulkDelete}
-      disabled={submitting}
-    >
-      <Trash2 className="mr-2 h-4 w-4" />
-      Delete Selected ({selectedRows.length})
-    </Button>
   );
 
   if (loading) {
@@ -563,11 +495,25 @@ export default function PropertiesPage() {
 
       <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
         <DataTable
-          columns={columns}
           data={properties}
-          searchKey="properties"
-          onRowSelectionChange={setSelectedRows}
-          bulkActions={bulkActions}
+          columns={columns}
+          searchable={true}
+          filterable={true}
+          sortable={true}
+          pagination={true}
+          pageSize={10}
+          exportable={true}
+          onExport={() => {
+            // Export functionality
+            console.log('Exporting properties...');
+          }}
+          actions={{
+            view: (property) => console.log('View property:', property),
+            edit: (property) => openEditModal(property),
+            delete: (property) => openDeleteModal(property.id)
+          }}
+          loading={loading}
+          emptyMessage="No properties found"
         />
       </div>
 

@@ -387,7 +387,7 @@ export default function InvoicesPage() {
       setSubmitting(true);
       const paymentData: MarkInvoicePaidRequest = {
         payment_date: paymentFormData.payment_date,
-        amount_paid: paymentFormData.amount_paid
+        amount: paymentFormData.amount_paid
       };
       
       await accountingService.markInvoicePaid(selectedInvoice.id, paymentData);

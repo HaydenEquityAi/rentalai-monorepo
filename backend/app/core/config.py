@@ -31,13 +31,15 @@ class Settings(BaseSettings):
     
     # CORS
     ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:3001", 
-        "http://127.0.0.1:3000",
         "https://rentalai.ai",
-        "https://www.rentalai.ai",
-        "https://rental-ai-frontend.vercel.app",
+        "https://www.rentalai.ai", 
+        "http://rentalai.ai",
+        "http://www.rentalai.ai",
         "https://rentalai-monorepo.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "https://rental-ai-frontend.vercel.app",
     ]
     ALLOWED_HOSTS: List[str] = ["*"]
     
@@ -47,11 +49,21 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             # Try to parse as JSON first
             try:
-                return json.loads(v)
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return parsed
+                else:
+                    # If it's not a list, wrap it
+                    return [parsed]
             except json.JSONDecodeError:
-                # Fall back to comma-separated
-                return [origin.strip() for origin in v.split(',')]
-        return v
+                # Fall back to comma-separated parsing
+                return [origin.strip() for origin in v.split(',') if origin.strip()]
+        elif isinstance(v, list):
+            # Already a list, return as-is
+            return v
+        else:
+            # Convert other types to string and handle
+            return [str(v)]
     
     # ========================================================================
     # DATABASE

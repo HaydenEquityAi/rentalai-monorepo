@@ -30,21 +30,37 @@ import {
   Calculator
 } from 'lucide-react';
 import { accountingService } from '@/services/accounting.service';
-import { Invoice, InvoiceLineItem, Vendor } from '@/types/accounting';
+import { 
+  Invoice, 
+  InvoiceLineItem, 
+  Vendor, 
+  CreateInvoiceRequest, 
+  UpdateInvoiceRequest, 
+  CreateInvoiceLineItemRequest,
+  MarkInvoicePaidRequest 
+} from '@/types/accounting';
+
+// Form data interfaces (without backend-generated fields)
+interface InvoiceLineItemFormData {
+  description: string;
+  quantity: string;
+  unit_price: string;
+  amount: string;
+}
 
 interface InvoiceFormData {
   vendor_id: string;
   invoice_number: string;
   invoice_date: string;
   due_date: string;
-  line_items: InvoiceLineItem[];
+  line_items: InvoiceLineItemFormData[];
   tax_amount: string;
   notes: string;
 }
 
 interface InvoiceFilters {
   search: string;
-  status: 'ALL' | 'PENDING' | 'PAID' | 'OVERDUE';
+  status: 'ALL' | 'pending' | 'paid' | 'overdue';
   vendor_id: string;
   date_from: string;
   date_to: string;
@@ -131,9 +147,9 @@ export default function InvoicesPage() {
       filtered = filtered.filter(invoice => {
         const today = new Date();
         const dueDate = new Date(invoice.due_date);
-        const isOverdue = dueDate < today && invoice.status !== 'PAID';
+        const isOverdue = dueDate < today && invoice.status !== 'paid';
         
-        if (filters.status === 'OVERDUE') {
+        if (filters.status === 'overdue') {
           return isOverdue;
         }
         return invoice.status === filters.status;
@@ -229,7 +245,7 @@ export default function InvoicesPage() {
   };
 
   // Update line item
-  const updateLineItem = (index: number, field: keyof InvoiceLineItem, value: string) => {
+  const updateLineItem = (index: number, field: keyof InvoiceLineItemFormData, value: string) => {
     setFormData(prev => {
       const newLineItems = [...prev.line_items];
       newLineItems[index] = { ...newLineItems[index], [field]: value };
@@ -290,7 +306,29 @@ export default function InvoicesPage() {
 
     try {
       setSubmitting(true);
-      await accountingService.createInvoice(formData);
+      const subtotal = calculateSubtotal().toFixed(2);
+      const total = calculateTotal().toFixed(2);
+      
+      const createData: CreateInvoiceRequest = {
+        vendor_id: formData.vendor_id || undefined,
+        invoice_number: formData.invoice_number,
+        invoice_date: formData.invoice_date,
+        due_date: formData.due_date,
+        subtotal: subtotal,
+        tax_amount: formData.tax_amount,
+        total_amount: total,
+        amount_paid: '0',
+        status: 'pending',
+        notes: formData.notes || undefined,
+        line_items: formData.line_items.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          amount: item.amount
+        }))
+      };
+      
+      await accountingService.createInvoice(createData);
       await fetchData();
       setCreateDialogOpen(false);
       resetForm();
@@ -308,7 +346,27 @@ export default function InvoicesPage() {
 
     try {
       setSubmitting(true);
-      await accountingService.updateInvoice(selectedInvoice.id, formData);
+      const subtotal = calculateSubtotal().toFixed(2);
+      const total = calculateTotal().toFixed(2);
+      
+      const updateData: UpdateInvoiceRequest = {
+        vendor_id: formData.vendor_id || undefined,
+        invoice_number: formData.invoice_number,
+        invoice_date: formData.invoice_date,
+        due_date: formData.due_date,
+        subtotal: subtotal,
+        tax_amount: formData.tax_amount,
+        total_amount: total,
+        notes: formData.notes || undefined,
+        line_items: formData.line_items.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          amount: item.amount
+        }))
+      };
+      
+      await accountingService.updateInvoice(selectedInvoice.id, updateData);
       await fetchData();
       setEditDialogOpen(false);
       setSelectedInvoice(null);
@@ -327,10 +385,12 @@ export default function InvoicesPage() {
 
     try {
       setSubmitting(true);
-      await accountingService.markInvoicePaid(selectedInvoice.id, {
+      const paymentData: MarkInvoicePaidRequest = {
         payment_date: paymentFormData.payment_date,
         amount_paid: paymentFormData.amount_paid
-      });
+      };
+      
+      await accountingService.markInvoicePaid(selectedInvoice.id, paymentData);
       await fetchData();
       setPaymentDialogOpen(false);
       setSelectedInvoice(null);
@@ -364,11 +424,16 @@ export default function InvoicesPage() {
   const openEditDialog = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setFormData({
-      vendor_id: invoice.vendor_id,
+      vendor_id: invoice.vendor_id || '',
       invoice_number: invoice.invoice_number,
       invoice_date: invoice.invoice_date,
       due_date: invoice.due_date,
-      line_items: invoice.line_items || [{ description: '', quantity: '1', unit_price: '0', amount: '0' }],
+      line_items: invoice.line_items?.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        amount: item.amount
+      })) || [{ description: '', quantity: '1', unit_price: '0', amount: '0' }],
       tax_amount: invoice.tax_amount || '0',
       notes: invoice.notes || ''
     });
@@ -503,7 +568,7 @@ export default function InvoicesPage() {
                       <SelectContent>
                         {vendors.map((vendor) => (
                           <SelectItem key={vendor.id} value={vendor.id}>
-                            {vendor.name}
+                            {vendor.vendor_name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -726,9 +791,9 @@ export default function InvoicesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Status</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="PAID">Paid</SelectItem>
-                  <SelectItem value="OVERDUE">Overdue</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -745,7 +810,7 @@ export default function InvoicesPage() {
                   <SelectItem value="ALL">All Vendors</SelectItem>
                   {vendors.map((vendor) => (
                     <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
+                      {vendor.vendor_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -812,7 +877,7 @@ export default function InvoicesPage() {
                         {invoice.invoice_number}
                       </TableCell>
                       <TableCell>
-                        {vendor?.name || 'Unknown Vendor'}
+                        {vendor?.vendor_name || 'Unknown Vendor'}
                       </TableCell>
                       <TableCell>
                         {new Date(invoice.invoice_date).toLocaleDateString()}
@@ -847,7 +912,7 @@ export default function InvoicesPage() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          {invoice.status !== 'PAID' && (
+                          {invoice.status !== 'paid' && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -893,7 +958,7 @@ export default function InvoicesPage() {
                   <h3 className="font-semibold text-lg">Invoice Information</h3>
                   <div className="space-y-2 mt-2">
                     <div><strong>Invoice Number:</strong> {selectedInvoice.invoice_number}</div>
-                    <div><strong>Vendor:</strong> {vendors.find(v => v.id === selectedInvoice.vendor_id)?.name}</div>
+                    <div><strong>Vendor:</strong> {vendors.find(v => v.id === selectedInvoice.vendor_id)?.vendor_name}</div>
                     <div><strong>Invoice Date:</strong> {new Date(selectedInvoice.invoice_date).toLocaleDateString()}</div>
                     <div><strong>Due Date:</strong> {new Date(selectedInvoice.due_date).toLocaleDateString()}</div>
                   </div>
@@ -952,7 +1017,7 @@ export default function InvoicesPage() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-4 border-t">
-                {selectedInvoice.status !== 'PAID' && (
+                {selectedInvoice.status !== 'paid' && (
                   <Button onClick={() => openPaymentDialog(selectedInvoice)}>
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Mark as Paid

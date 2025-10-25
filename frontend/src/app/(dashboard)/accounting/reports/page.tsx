@@ -48,7 +48,15 @@ import {
   AreaChart
 } from 'recharts';
 import { accountingService } from '@/services/accounting.service';
-import { Account } from '@/types/accounting';
+import { 
+  Account, 
+  ProfitLossReport, 
+  BalanceSheetReport, 
+  CashFlowReport,
+  ProfitLossRequest,
+  BalanceSheetRequest,
+  CashFlowRequest
+} from '@/types/accounting';
 
 type ReportType = 'profit-loss' | 'balance-sheet' | 'cash-flow';
 
@@ -91,7 +99,7 @@ export default function FinancialReportsPage() {
     as_of_date: new Date().toISOString().split('T')[0]
   });
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [reportData, setReportData] = useState<any>(null);
+  const [reportData, setReportData] = useState<ProfitLossReport | BalanceSheetReport | CashFlowReport | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,30 +123,41 @@ export default function FinancialReportsPage() {
       setLoading(true);
       setError(null);
 
-      let data;
-      const startDate = new Date(reportParams.start_date);
-      const endDate = new Date(reportParams.end_date);
-      const asOfDate = new Date(reportParams.as_of_date);
+      let data: ProfitLossReport | BalanceSheetReport | CashFlowReport;
 
       switch (selectedReportType) {
         case 'profit-loss':
+          const profitLossRequest: ProfitLossRequest = {
+            property_id: reportParams.property_id,
+            start_date: reportParams.start_date,
+            end_date: reportParams.end_date
+          };
           data = await accountingService.getProfitLoss(
-            reportParams.property_id,
-            reportParams.start_date,
-            reportParams.end_date
+            profitLossRequest.property_id,
+            profitLossRequest.start_date,
+            profitLossRequest.end_date
           );
           break;
         case 'balance-sheet':
+          const balanceSheetRequest: BalanceSheetRequest = {
+            property_id: reportParams.property_id,
+            as_of_date: reportParams.as_of_date
+          };
           data = await accountingService.getBalanceSheet(
-            reportParams.property_id,
-            reportParams.as_of_date
+            balanceSheetRequest.property_id,
+            balanceSheetRequest.as_of_date
           );
           break;
         case 'cash-flow':
+          const cashFlowRequest: CashFlowRequest = {
+            property_id: reportParams.property_id,
+            start_date: reportParams.start_date,
+            end_date: reportParams.end_date
+          };
           data = await accountingService.getCashFlow(
-            reportParams.property_id,
-            reportParams.start_date,
-            reportParams.end_date
+            cashFlowRequest.property_id,
+            cashFlowRequest.start_date,
+            cashFlowRequest.end_date
           );
           break;
       }
@@ -154,7 +173,7 @@ export default function FinancialReportsPage() {
   };
 
   // Generate chart data based on report type
-  const generateChartData = (data: any, reportType: ReportType) => {
+  const generateChartData = (data: ProfitLossReport | BalanceSheetReport | CashFlowReport, reportType: ReportType) => {
     switch (reportType) {
       case 'profit-loss':
         // Generate monthly data for P&L chart
@@ -176,22 +195,24 @@ export default function FinancialReportsPage() {
 
       case 'balance-sheet':
         // Generate pie chart data for balance sheet
+        const balanceSheetData = data as BalanceSheetReport;
         const pieData = [
-          { name: 'Current Assets', value: data?.total_assets * 0.4 || 0, color: '#3b82f6' },
-          { name: 'Fixed Assets', value: data?.total_assets * 0.6 || 0, color: '#1d4ed8' },
-          { name: 'Current Liabilities', value: data?.total_liabilities * 0.7 || 0, color: '#ef4444' },
-          { name: 'Long-term Liabilities', value: data?.total_liabilities * 0.3 || 0, color: '#dc2626' },
-          { name: 'Equity', value: data?.total_equity || 0, color: '#10b981' }
+          { name: 'Current Assets', value: parseFloat(balanceSheetData.assets) * 0.4, color: '#3b82f6' },
+          { name: 'Fixed Assets', value: parseFloat(balanceSheetData.assets) * 0.6, color: '#1d4ed8' },
+          { name: 'Current Liabilities', value: parseFloat(balanceSheetData.liabilities) * 0.7, color: '#ef4444' },
+          { name: 'Long-term Liabilities', value: parseFloat(balanceSheetData.liabilities) * 0.3, color: '#dc2626' },
+          { name: 'Equity', value: parseFloat(balanceSheetData.equity), color: '#10b981' }
         ];
         setChartData(pieData);
         break;
 
       case 'cash-flow':
         // Generate waterfall chart data for cash flow
+        const cashFlowData = data as CashFlowReport;
         const waterfallData = [
-          { category: 'Operating', amount: data?.operating?.reduce((sum: number, item: any) => sum + item.amount, 0) || 0 },
-          { category: 'Investing', amount: data?.investing?.reduce((sum: number, item: any) => sum + item.amount, 0) || 0 },
-          { category: 'Financing', amount: data?.financing?.reduce((sum: number, item: any) => sum + item.amount, 0) || 0 }
+          { category: 'Operating', amount: parseFloat(cashFlowData.operating_cash_flow) },
+          { category: 'Investing', amount: parseFloat(cashFlowData.investing_cash_flow) },
+          { category: 'Financing', amount: parseFloat(cashFlowData.financing_cash_flow) }
         ];
         setChartData(waterfallData);
         break;
@@ -457,7 +478,7 @@ export default function FinancialReportsPage() {
                     <SelectItem value="ALL">All Properties</SelectItem>
                     {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
-                        {account.name}
+                        {account.account_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -553,15 +574,9 @@ export default function FinancialReportsPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-green-700 mb-4">REVENUE</h3>
                       <div className="space-y-2">
-                        {reportData.revenue?.map((item: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center py-1">
-                            <span className="ml-4">{item.account}</span>
-                            <span className="font-mono">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
                         <div className="border-t pt-2 flex justify-between items-center font-semibold">
                           <span>Total Revenue</span>
-                          <span className="font-mono text-green-700">{formatCurrency(reportData.total_revenue)}</span>
+                          <span className="font-mono text-green-700">{formatCurrency(parseFloat((reportData as ProfitLossReport).revenue))}</span>
                         </div>
                       </div>
                     </div>
@@ -570,15 +585,9 @@ export default function FinancialReportsPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-red-700 mb-4">EXPENSES</h3>
                       <div className="space-y-2">
-                        {reportData.expenses?.map((item: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center py-1">
-                            <span className="ml-4">{item.account}</span>
-                            <span className="font-mono">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
                         <div className="border-t pt-2 flex justify-between items-center font-semibold">
                           <span>Total Expenses</span>
-                          <span className="font-mono text-red-700">{formatCurrency(reportData.total_expenses)}</span>
+                          <span className="font-mono text-red-700">{formatCurrency(parseFloat((reportData as ProfitLossReport).expenses))}</span>
                         </div>
                       </div>
                     </div>
@@ -587,8 +596,8 @@ export default function FinancialReportsPage() {
                     <div className="border-t-2 pt-4">
                       <div className="flex justify-between items-center text-xl font-bold">
                         <span>NET INCOME</span>
-                        <span className={`font-mono ${reportData.net_income >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {formatCurrency(reportData.net_income)}
+                        <span className={`font-mono ${parseFloat((reportData as ProfitLossReport).net_income) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                          {formatCurrency(parseFloat((reportData as ProfitLossReport).net_income))}
                         </span>
                       </div>
                     </div>
@@ -602,15 +611,9 @@ export default function FinancialReportsPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-blue-700 mb-4">ASSETS</h3>
                       <div className="space-y-2">
-                        {reportData.assets?.map((item: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center py-1">
-                            <span className="ml-4">{item.account}</span>
-                            <span className="font-mono">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
                         <div className="border-t pt-2 flex justify-between items-center font-semibold">
                           <span>Total Assets</span>
-                          <span className="font-mono text-blue-700">{formatCurrency(reportData.total_assets)}</span>
+                          <span className="font-mono text-blue-700">{formatCurrency(parseFloat((reportData as BalanceSheetReport).assets))}</span>
                         </div>
                       </div>
                     </div>
@@ -619,29 +622,17 @@ export default function FinancialReportsPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-red-700 mb-4">LIABILITIES</h3>
                       <div className="space-y-2">
-                        {reportData.liabilities?.map((item: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center py-1">
-                            <span className="ml-4">{item.account}</span>
-                            <span className="font-mono">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
                         <div className="border-t pt-2 flex justify-between items-center font-semibold">
                           <span>Total Liabilities</span>
-                          <span className="font-mono text-red-700">{formatCurrency(reportData.total_liabilities)}</span>
+                          <span className="font-mono text-red-700">{formatCurrency(parseFloat((reportData as BalanceSheetReport).liabilities))}</span>
                         </div>
                       </div>
 
                       <h3 className="text-lg font-semibold text-green-700 mb-4 mt-6">EQUITY</h3>
                       <div className="space-y-2">
-                        {reportData.equity?.map((item: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center py-1">
-                            <span className="ml-4">{item.account}</span>
-                            <span className="font-mono">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
                         <div className="border-t pt-2 flex justify-between items-center font-semibold">
                           <span>Total Equity</span>
-                          <span className="font-mono text-green-700">{formatCurrency(reportData.total_equity)}</span>
+                          <span className="font-mono text-green-700">{formatCurrency(parseFloat((reportData as BalanceSheetReport).equity))}</span>
                         </div>
                       </div>
                     </div>
@@ -655,12 +646,10 @@ export default function FinancialReportsPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-blue-700 mb-4">OPERATING ACTIVITIES</h3>
                       <div className="space-y-2">
-                        {reportData.operating?.map((item: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center py-1">
-                            <span className="ml-4">{item.account}</span>
-                            <span className="font-mono">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
+                        <div className="flex justify-between items-center py-1">
+                          <span className="ml-4">Operating Cash Flow</span>
+                          <span className="font-mono">{formatCurrency(parseFloat((reportData as CashFlowReport).operating_cash_flow))}</span>
+                        </div>
                       </div>
                     </div>
 
@@ -668,12 +657,10 @@ export default function FinancialReportsPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-purple-700 mb-4">INVESTING ACTIVITIES</h3>
                       <div className="space-y-2">
-                        {reportData.investing?.map((item: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center py-1">
-                            <span className="ml-4">{item.account}</span>
-                            <span className="font-mono">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
+                        <div className="flex justify-between items-center py-1">
+                          <span className="ml-4">Investing Cash Flow</span>
+                          <span className="font-mono">{formatCurrency(parseFloat((reportData as CashFlowReport).investing_cash_flow))}</span>
+                        </div>
                       </div>
                     </div>
 
@@ -681,12 +668,10 @@ export default function FinancialReportsPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-green-700 mb-4">FINANCING ACTIVITIES</h3>
                       <div className="space-y-2">
-                        {reportData.financing?.map((item: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center py-1">
-                            <span className="ml-4">{item.account}</span>
-                            <span className="font-mono">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
+                        <div className="flex justify-between items-center py-1">
+                          <span className="ml-4">Financing Cash Flow</span>
+                          <span className="font-mono">{formatCurrency(parseFloat((reportData as CashFlowReport).financing_cash_flow))}</span>
+                        </div>
                       </div>
                     </div>
 
@@ -694,8 +679,8 @@ export default function FinancialReportsPage() {
                     <div className="border-t-2 pt-4">
                       <div className="flex justify-between items-center text-xl font-bold">
                         <span>NET CASH FLOW</span>
-                        <span className={`font-mono ${reportData.net_cash_flow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          {formatCurrency(reportData.net_cash_flow)}
+                        <span className={`font-mono ${parseFloat((reportData as CashFlowReport).net_cash_flow) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                          {formatCurrency(parseFloat((reportData as CashFlowReport).net_cash_flow))}
                         </span>
                       </div>
                     </div>

@@ -271,7 +271,7 @@ export default function HUDComplianceDashboard() {
       property: `Property ${inspection.property_id}`,
       inspectionDate: inspection.inspection_date,
       type: inspection.inspection_type,
-      overallScore: inspection.overall_score,
+      overallScore: inspection.overall_score ?? 0,
       status: inspection.status,
       deficiencies: inspection.deficiencies_count || 0
     }));

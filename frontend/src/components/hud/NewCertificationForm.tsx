@@ -94,13 +94,13 @@ export function NewCertificationForm({ onSuccess, onCancel }: NewCertificationFo
     try {
       // Mock data - replace with actual API calls
       setTenants([
-        { id: '1', name: 'John Doe', email: 'john@example.com' },
-        { id: '2', name: 'Jane Smith', email: 'jane@example.com' }
+        { id: '550e8400-e29b-41d4-a716-446655440001', name: 'John Doe', email: 'john@example.com' },
+        { id: '550e8400-e29b-41d4-a716-446655440002', name: 'Jane Smith', email: 'jane@example.com' }
       ]);
       
       setProperties([
-        { id: '1', name: 'Sunset Apartments', address: '123 Main St' },
-        { id: '2', name: 'Oak Gardens', address: '456 Oak Ave' }
+        { id: '550e8400-e29b-41d4-a716-446655440003', name: 'Sunset Apartments', address: '123 Main St' },
+        { id: '550e8400-e29b-41d4-a716-446655440004', name: 'Oak Gardens', address: '456 Oak Ave' }
       ]);
     } catch (err) {
       console.error('Error loading initial data:', err);
@@ -111,10 +111,10 @@ export function NewCertificationForm({ onSuccess, onCancel }: NewCertificationFo
     try {
       // Mock data - replace with actual API call
       setUnits([
-        { id: '1', number: '101', bedrooms: 1, bathrooms: 1 },
-        { id: '2', number: '102', bedrooms: 2, bathrooms: 1 },
-        { id: '3', number: '201', bedrooms: 1, bathrooms: 1 },
-        { id: '4', number: '202', bedrooms: 2, bathrooms: 2 }
+        { id: '550e8400-e29b-41d4-a716-446655440005', number: '101', bedrooms: 1, bathrooms: 1 },
+        { id: '550e8400-e29b-41d4-a716-446655440006', number: '102', bedrooms: 2, bathrooms: 1 },
+        { id: '550e8400-e29b-41d4-a716-446655440007', number: '201', bedrooms: 1, bathrooms: 1 },
+        { id: '550e8400-e29b-41d4-a716-446655440008', number: '202', bedrooms: 2, bathrooms: 2 }
       ]);
     } catch (err) {
       console.error('Error loading units:', err);

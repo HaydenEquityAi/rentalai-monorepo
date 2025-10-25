@@ -363,6 +363,8 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
                   <p className="text-sm text-red-600">{errors.line_items[index]?.amount?.message}</p>
                 )}
               </div>
+
+              <div className="flex items-end">
                 <Button
                   type="button"
                   variant="outline"

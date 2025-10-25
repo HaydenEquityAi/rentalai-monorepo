@@ -63,7 +63,7 @@ export default function ChartOfAccountsPage() {
   const [formData, setFormData] = useState<AccountFormData>({
     account_number: '',
     name: '',
-    account_type: 'ASSET',
+    account_type: 'asset',
     description: '',
     is_active: true
   });
@@ -128,7 +128,7 @@ export default function ChartOfAccountsPage() {
     setFormData({
       account_number: '',
       name: '',
-      account_type: 'ASSET',
+      account_type: 'asset',
       description: '',
       is_active: true
     });
@@ -240,15 +240,15 @@ export default function ChartOfAccountsPage() {
   // Get account type color
   const getAccountTypeColor = (type: AccountType): string => {
     switch (type) {
-      case 'ASSET':
+      case 'asset':
         return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'LIABILITY':
+      case 'liability':
         return 'bg-red-100 text-red-800 border-red-200';
-      case 'EQUITY':
+      case 'equity':
         return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'REVENUE':
+      case 'revenue':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'EXPENSE':
+      case 'expense':
         return 'bg-orange-100 text-orange-800 border-orange-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -258,15 +258,15 @@ export default function ChartOfAccountsPage() {
   // Get account type icon
   const getAccountTypeIcon = (type: AccountType) => {
     switch (type) {
-      case 'ASSET':
+      case 'asset':
         return '💰';
-      case 'LIABILITY':
+      case 'liability':
         return '📋';
-      case 'EQUITY':
+      case 'equity':
         return '📊';
-      case 'REVENUE':
+      case 'revenue':
         return '📈';
-      case 'EXPENSE':
+      case 'expense':
         return '📉';
       default:
         return '📄';
@@ -361,11 +361,11 @@ export default function ChartOfAccountsPage() {
                       <SelectValue placeholder="Select account type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ASSET">Asset</SelectItem>
-                      <SelectItem value="LIABILITY">Liability</SelectItem>
-                      <SelectItem value="EQUITY">Equity</SelectItem>
-                      <SelectItem value="REVENUE">Revenue</SelectItem>
-                      <SelectItem value="EXPENSE">Expense</SelectItem>
+                      <SelectItem value="asset">Asset</SelectItem>
+                      <SelectItem value="liability">Liability</SelectItem>
+                      <SelectItem value="equity">Equity</SelectItem>
+                      <SelectItem value="revenue">Revenue</SelectItem>
+                      <SelectItem value="expense">Expense</SelectItem>
                     </SelectContent>
                   </Select>
                   {formErrors.account_type && (
@@ -452,11 +452,11 @@ export default function ChartOfAccountsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Types</SelectItem>
-                <SelectItem value="ASSET">Assets</SelectItem>
-                <SelectItem value="LIABILITY">Liabilities</SelectItem>
-                <SelectItem value="EQUITY">Equity</SelectItem>
-                <SelectItem value="REVENUE">Revenue</SelectItem>
-                <SelectItem value="EXPENSE">Expenses</SelectItem>
+                <SelectItem value="asset">Assets</SelectItem>
+                <SelectItem value="liability">Liabilities</SelectItem>
+                <SelectItem value="equity">Equity</SelectItem>
+                <SelectItem value="revenue">Revenue</SelectItem>
+                <SelectItem value="expense">Expenses</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -600,11 +600,11 @@ export default function ChartOfAccountsPage() {
                   <SelectValue placeholder="Select account type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ASSET">Asset</SelectItem>
-                  <SelectItem value="LIABILITY">Liability</SelectItem>
-                  <SelectItem value="EQUITY">Equity</SelectItem>
-                  <SelectItem value="REVENUE">Revenue</SelectItem>
-                  <SelectItem value="EXPENSE">Expense</SelectItem>
+                  <SelectItem value="asset">Asset</SelectItem>
+                  <SelectItem value="liability">Liability</SelectItem>
+                  <SelectItem value="equity">Equity</SelectItem>
+                  <SelectItem value="revenue">Revenue</SelectItem>
+                  <SelectItem value="expense">Expense</SelectItem>
                 </SelectContent>
               </Select>
               {formErrors.account_type && (

@@ -111,7 +111,7 @@ export function NewTransactionForm({ onSuccess, onCancel }: NewTransactionFormPr
         amount: data.amount,
         vendor_id: data.vendor_id || undefined,
         reference_number: data.reference_number || undefined,
-        notes: data.notes || undefined
+        memo: data.notes || undefined
       };
 
       await accountingService.createTransaction(transactionData);

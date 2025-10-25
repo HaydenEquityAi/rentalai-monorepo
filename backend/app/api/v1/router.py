@@ -21,6 +21,7 @@ from app.api.v1.payments import payments_router
 from app.api.v1.billing import billing_router
 from app.api.v1.analytics import analytics_router
 from app.api.v1.users import users_router
+from app.api.v1.hud import hud_router
 
 # Include routers
 api_router.include_router(auth_router)
@@ -35,6 +36,7 @@ api_router.include_router(payments_router, prefix="/payments", tags=["payments"]
 api_router.include_router(billing_router, prefix="/billing", tags=["billing"])
 api_router.include_router(analytics_router)
 api_router.include_router(users_router)
+api_router.include_router(hud_router, prefix="/hud", tags=["HUD Compliance"])
 
 # For now, let's add a simple health check endpoint
 @api_router.get("/health")

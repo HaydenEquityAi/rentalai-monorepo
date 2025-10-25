@@ -147,7 +147,7 @@ class HouseholdMember(Base):
     full_name = Column(String(255), nullable=False)
     ssn_last_4 = Column(String(4), nullable=True)
     date_of_birth = Column(Date, nullable=False)
-    relationship = Column(String(20), nullable=False)  # RelationshipType enum
+    relationship_type = Column(String(20), nullable=False)  # RelationshipType enum
     
     # Status flags
     is_student = Column(Boolean, default=False)
@@ -168,7 +168,7 @@ class HouseholdMember(Base):
     # Indexes
     __table_args__ = (
         Index("idx_hm_tic", "tic_id"),
-        Index("idx_hm_relationship", "relationship"),
+        Index("idx_hm_relationship_type", "relationship_type"),
     )
 
 

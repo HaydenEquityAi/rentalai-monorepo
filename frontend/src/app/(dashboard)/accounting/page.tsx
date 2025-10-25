@@ -143,7 +143,7 @@ export default function AccountingDashboard() {
 
   // Generate chart data for last 6 months
   const generateChartData = (transactions: Transaction[]): ChartData[] => {
-    const months = [];
+    const months: ChartData[] = [];
     const now = new Date();
     
     for (let i = 5; i >= 0; i--) {

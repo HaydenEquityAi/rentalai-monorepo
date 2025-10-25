@@ -134,6 +134,78 @@ class AIJobStatus(str, PyEnum):
     FAILED = "failed"
 
 
+# HUD Compliance Enums
+class CertificationType(str, PyEnum):
+    """Types of income certifications"""
+    INITIAL = "initial"
+    ANNUAL = "annual"
+    INTERIM = "interim"
+    OTHER = "other"
+
+
+class CertificationStatus(str, PyEnum):
+    """Status of income certification"""
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class RelationshipType(str, PyEnum):
+    """Household member relationship types"""
+    HEAD = "head"
+    SPOUSE = "spouse"
+    CHILD = "child"
+    OTHER = "other"
+
+
+class IncomeType(str, PyEnum):
+    """Types of income sources"""
+    WAGES = "wages"
+    SALARY = "salary"
+    SOCIAL_SECURITY = "social_security"
+    SSI = "ssi"
+    SSDI = "ssdi"
+    UNEMPLOYMENT = "unemployment"
+    WORKERS_COMP = "workers_comp"
+    CHILD_SUPPORT = "child_support"
+    ALIMONY = "alimony"
+    PENSION = "pension"
+    ANNUITY = "annuity"
+    INTEREST = "interest"
+    DIVIDENDS = "dividends"
+    CAPITAL_GAINS = "capital_gains"
+    BUSINESS_INCOME = "business_income"
+    RENTAL_INCOME = "rental_income"
+    OTHER = "other"
+
+
+class VerificationType(str, PyEnum):
+    """Types of income verification"""
+    PAY_STUB = "pay_stub"
+    TAX_RETURN = "tax_return"
+    AWARD_LETTER = "award_letter"
+    BANK_STATEMENT = "bank_statement"
+    EMPLOYER_VERIFICATION = "employer_verification"
+    AGENCY_VERIFICATION = "agency_verification"
+    OTHER = "other"
+
+
+class InspectionType(str, PyEnum):
+    """Types of REAC inspections"""
+    INITIAL = "initial"
+    ANNUAL = "annual"
+    COMPLAINT = "complaint"
+    FOLLOW_UP = "follow_up"
+
+
+class InspectionStatus(str, PyEnum):
+    """Status of REAC inspection"""
+    PASSED = "passed"
+    FAILED = "failed"
+    CONDITIONAL = "conditional"
+    PENDING = "pending"
+
+
 # Models
 class Organization(Base):
     """Organization/Company - top level entity"""
@@ -629,6 +701,204 @@ class AIJob(Base):
     )
 
 
+# HUD Compliance Models
+class TenantIncomeCertification(Base):
+    """HUD Tenant Income Certification (TIC) records"""
+    __tablename__ = "tenant_income_certifications"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    property_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("properties.id"), nullable=False, index=True)
+    unit_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("units.id"), nullable=True, index=True)
+    
+    # Certification details
+    certification_date: Mapped[date] = mapped_column(Date, nullable=False)
+    effective_date: Mapped[date] = mapped_column(Date, nullable=False)
+    cert_type: Mapped[str] = mapped_column(String(20), nullable=False)  # CertificationType enum
+    household_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    
+    # Income calculations
+    annual_income: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False)
+    adjusted_income: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False)
+    tenant_rent_portion: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False)
+    utility_allowance: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False)
+    subsidy_amount: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False)
+    
+    # Status and compliance
+    certification_status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")  # CertificationStatus enum
+    hud_50059_submitted: Mapped[bool] = mapped_column(Boolean, default=False)
+    hud_50059_submission_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Audit fields
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    organization: Mapped["Organization"] = relationship("Organization")
+    tenant: Mapped["Tenant"] = relationship("Tenant")
+    property: Mapped["Property"] = relationship("Property")
+    unit: Mapped["Unit"] = relationship("Unit")
+    creator: Mapped["User"] = relationship("User")
+    household_members: Mapped[List["HouseholdMember"]] = relationship("HouseholdMember", back_populates="certification", cascade="all, delete-orphan")
+    
+    # Indexes
+    __table_args__ = (
+        Index("idx_tic_org_tenant", "org_id", "tenant_id"),
+        Index("idx_tic_org_property", "org_id", "property_id"),
+        Index("idx_tic_effective_date", "effective_date"),
+        Index("idx_tic_status", "certification_status"),
+        Index("idx_tic_type", "cert_type"),
+    )
+
+
+class HouseholdMember(Base):
+    """Household members for income certification"""
+    __tablename__ = "household_members"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tic_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenant_income_certifications.id"), nullable=False, index=True)
+    
+    # Personal information
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    ssn_last_4: Mapped[Optional[str]] = mapped_column(String(4), nullable=True)
+    date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
+    relationship_type: Mapped[str] = mapped_column(String(20), nullable=False)  # RelationshipType enum
+    
+    # Status flags
+    is_student: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_disabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    # Income
+    annual_income: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=0)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    certification: Mapped["TenantIncomeCertification"] = relationship("TenantIncomeCertification", back_populates="household_members")
+    income_sources: Mapped[List["IncomeSource"]] = relationship("IncomeSource", back_populates="household_member", cascade="all, delete-orphan")
+    
+    # Indexes
+    __table_args__ = (
+        Index("idx_hm_tic", "tic_id"),
+        Index("idx_hm_relationship_type", "relationship_type"),
+    )
+
+
+class IncomeSource(Base):
+    """Income sources for household members"""
+    __tablename__ = "income_sources"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    household_member_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("household_members.id"), nullable=False, index=True)
+    
+    # Income details
+    income_type: Mapped[str] = mapped_column(String(30), nullable=False)  # IncomeType enum
+    employer_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    monthly_amount: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False)
+    annual_amount: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False)
+    
+    # Verification
+    verification_type: Mapped[str] = mapped_column(String(30), nullable=False)  # VerificationType enum
+    verification_date: Mapped[date] = mapped_column(Date, nullable=False)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    household_member: Mapped["HouseholdMember"] = relationship("HouseholdMember", back_populates="income_sources")
+    
+    # Indexes
+    __table_args__ = (
+        Index("idx_is_hm", "household_member_id"),
+        Index("idx_is_type", "income_type"),
+        Index("idx_is_verification", "verification_type"),
+    )
+
+
+class UtilityAllowance(Base):
+    """Utility allowances by bedroom count and property"""
+    __tablename__ = "utility_allowances"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True)
+    property_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("properties.id"), nullable=False, index=True)
+    
+    # Allowance details
+    bedroom_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    heating: Mapped[Decimal] = mapped_column(DECIMAL(8, 2), nullable=False, default=0)
+    cooking: Mapped[Decimal] = mapped_column(DECIMAL(8, 2), nullable=False, default=0)
+    lighting: Mapped[Decimal] = mapped_column(DECIMAL(8, 2), nullable=False, default=0)
+    water_sewer: Mapped[Decimal] = mapped_column(DECIMAL(8, 2), nullable=False, default=0)
+    trash: Mapped[Decimal] = mapped_column(DECIMAL(8, 2), nullable=False, default=0)
+    total_allowance: Mapped[Decimal] = mapped_column(DECIMAL(8, 2), nullable=False)
+    
+    # Effective date
+    effective_date: Mapped[date] = mapped_column(Date, nullable=False)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    organization: Mapped["Organization"] = relationship("Organization")
+    property: Mapped["Property"] = relationship("Property")
+    
+    # Indexes
+    __table_args__ = (
+        Index("idx_ua_org_property", "org_id", "property_id"),
+        Index("idx_ua_bedrooms", "bedroom_count"),
+        Index("idx_ua_effective_date", "effective_date"),
+    )
+
+
+class REACInspection(Base):
+    """REAC (Real Estate Assessment Center) inspection records"""
+    __tablename__ = "reac_inspections"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    property_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("properties.id"), nullable=False, index=True)
+    
+    # Inspection details
+    inspection_date: Mapped[date] = mapped_column(Date, nullable=False)
+    inspection_type: Mapped[str] = mapped_column(String(20), nullable=False)  # InspectionType enum
+    overall_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 0-100 scale
+    inspection_status: Mapped[str] = mapped_column(String(20), nullable=False)  # InspectionStatus enum
+    
+    # Deficiency tracking
+    deficiencies_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    critical_deficiencies: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    
+    # Documentation
+    report_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    next_inspection_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    property: Mapped["Property"] = relationship("Property")
+    
+    # Indexes
+    __table_args__ = (
+        Index("idx_reac_property", "property_id"),
+        Index("idx_reac_date", "inspection_date"),
+        Index("idx_reac_type", "inspection_type"),
+        Index("idx_reac_status", "inspection_status"),
+        Index("idx_reac_score", "overall_score"),
+    )
+
+
 # Import Subscription model
 from app.models.subscription import Subscription, SubscriptionPlan, SubscriptionStatus
 
@@ -643,20 +913,4 @@ from app.models.accounting import (
     BankAccount,
     AccountType,
     TransactionType,
-)
-
-# HUD models
-from app.models.hud import (
-    TenantIncomeCertification,
-    HouseholdMember,
-    IncomeSource,
-    UtilityAllowance,
-    REACInspection,
-    CertificationType,
-    CertificationStatus,
-    RelationshipType,
-    IncomeType,
-    VerificationType,
-    InspectionType,
-    InspectionStatus,
 )

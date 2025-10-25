@@ -42,18 +42,18 @@ const LEAD_SOURCES = [
 ];
 
 const STATUS_COLORS = {
-  new: 'info',
-  contacted: 'warning',
-  qualified: 'success',
+  new: 'default',
+  contacted: 'outline',
+  qualified: 'secondary',
   lost: 'destructive',
 } as const;
 
 const SOURCE_COLORS = {
-  website: 'info',
-  referral: 'success',
+  website: 'default',
+  referral: 'secondary',
   walk_in: 'secondary',
-  phone: 'warning',
-  email: 'info',
+  phone: 'outline',
+  email: 'default',
 } as const;
 
 export default function LeadsPage() {

@@ -37,9 +37,9 @@ const UNIT_STATUSES = [
 ];
 
 const STATUS_COLORS = {
-  available: 'success',
+  available: 'secondary',
   occupied: 'secondary',
-  maintenance: 'warning',
+  maintenance: 'outline',
   unavailable: 'destructive',
 } as const;
 

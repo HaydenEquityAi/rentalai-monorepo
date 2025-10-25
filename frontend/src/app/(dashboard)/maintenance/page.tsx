@@ -56,15 +56,15 @@ const STATUSES = [
 
 const PRIORITY_COLORS = {
   low: 'secondary',
-  medium: 'warning',
-  high: 'warning',
+  medium: 'outline',
+  high: 'outline',
   urgent: 'destructive',
 } as const;
 
 const STATUS_COLORS = {
-  open: 'info',
-  in_progress: 'warning',
-  completed: 'success',
+  open: 'default',
+  in_progress: 'outline',
+  completed: 'secondary',
   cancelled: 'secondary',
 } as const;
 

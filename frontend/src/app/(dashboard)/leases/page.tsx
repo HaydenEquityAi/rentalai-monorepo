@@ -44,8 +44,8 @@ const LEASE_STATUSES = [
 ];
 
 const STATUS_COLORS = {
-  pending: 'warning',
-  active: 'success',
+  pending: 'outline',
+  active: 'secondary',
   expired: 'secondary',
   terminated: 'destructive',
 } as const;

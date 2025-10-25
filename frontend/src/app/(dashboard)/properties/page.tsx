@@ -42,10 +42,10 @@ const PROPERTY_TYPES = [
 ];
 
 const PROPERTY_TYPE_COLORS = {
-  single_family: 'info',
-  multi_family: 'success',
-  commercial: 'warning',
-  apartment: 'info',
+  single_family: 'default',
+  multi_family: 'secondary',
+  commercial: 'outline',
+  apartment: 'default',
   condo: 'secondary',
   townhouse: 'secondary',
 } as const;
@@ -315,7 +315,7 @@ export default function PropertiesPage() {
         cell: ({ row }) => {
           const status = row.getValue("status") as string;
           return (
-            <Badge variant={status === 'active' ? 'success' : 'secondary'}>
+            <Badge variant={status === 'active' ? 'default' : 'secondary'}>
               {status === 'active' ? 'Active' : 'Inactive'}
             </Badge>
           );

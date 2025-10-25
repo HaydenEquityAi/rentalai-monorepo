@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { Plus, Users, AlertCircle, Edit, Trash2, MoreHorizontal, Eye, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -66,7 +64,6 @@ export default function LeadsPage() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<Lead[]>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -269,132 +266,84 @@ export default function LeadsPage() {
   }, [leads]);
 
 
-  const columns: ColumnDef<Lead>[] = useMemo(
+  const columns: Column<Lead>[] = useMemo(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
-        accessorKey: "name",
-        header: "Name",
-        cell: ({ row }) => (
+        key: 'name',
+        label: 'Name',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => (
           <div className="font-medium">
-            {row.getValue("name")}
+            {value}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "email",
-        header: "Email",
-        cell: ({ row }) => (
+        key: 'email',
+        label: 'Email',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => (
           <div className="flex items-center">
             <Mail className="h-4 w-4 mr-2 text-gray-400" />
-            {row.getValue("email")}
+            {value}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "phone",
-        header: "Phone",
-        cell: ({ row }) => (
+        key: 'phone',
+        label: 'Phone',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => (
           <div className="flex items-center">
             <Phone className="h-4 w-4 mr-2 text-gray-400" />
-            {row.getValue("phone")}
+            {value}
           </div>
-        ),
+        )
       },
       {
-        accessorKey: "source",
-        header: "Source",
-        cell: ({ row }) => {
-          const source = row.getValue("source") as string;
-          const color = SOURCE_COLORS[source as keyof typeof SOURCE_COLORS] || 'default';
-          const label = LEAD_SOURCES.find(s => s.value === source)?.label || source;
+        key: 'source',
+        label: 'Source',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => {
+          const color = SOURCE_COLORS[value as keyof typeof SOURCE_COLORS] || 'default';
+          const label = LEAD_SOURCES.find(s => s.value === value)?.label || value;
           
           return (
             <Badge variant={color as any}>
               {label}
             </Badge>
           );
-        },
+        }
       },
       {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.getValue("status") as string;
-          const color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'default';
-          const label = LEAD_STATUSES.find(s => s.value === status)?.label || status;
+        key: 'status',
+        label: 'Status',
+        sortable: true,
+        filterable: true,
+        render: (value: string) => {
+          const color = STATUS_COLORS[value as keyof typeof STATUS_COLORS] || 'default';
+          const label = LEAD_STATUSES.find(s => s.value === value)?.label || value;
           
           return (
             <Badge variant={color as any}>
               {label}
             </Badge>
           );
-        },
+        }
       },
       {
-        accessorKey: "date_added",
-        header: "Date Added",
-        cell: ({ row }) => {
-          const date = new Date(row.getValue("date_added"));
+        key: 'date_added',
+        label: 'Date Added',
+        sortable: true,
+        render: (value: string) => {
+          const date = new Date(value);
           return date.toLocaleDateString();
-        },
-      },
-      {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => {
-          const lead = row.original;
-
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openEditModal(lead)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => openDeleteModal(lead.id)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
-      },
+        }
+      }
     ],
     []
   );
@@ -622,10 +571,25 @@ export default function LeadsPage() {
 
       <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
         <DataTable
-          columns={columns}
           data={leads}
-          searchKey="leads"
-          onRowSelectionChange={setSelectedRows}
+          columns={columns}
+          searchable={true}
+          filterable={true}
+          sortable={true}
+          pagination={true}
+          pageSize={10}
+          exportable={true}
+          onExport={() => {
+            // Export functionality
+            console.log('Exporting leads...');
+          }}
+          actions={{
+            view: (lead) => console.log('View lead:', lead),
+            edit: (lead) => openEditModal(lead),
+            delete: (lead) => openDeleteModal(lead.id)
+          }}
+          loading={loading}
+          emptyMessage="No leads found"
         />
       </div>
 

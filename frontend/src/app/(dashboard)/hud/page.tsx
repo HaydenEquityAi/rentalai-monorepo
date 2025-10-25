@@ -256,7 +256,7 @@ export default function HUDComplianceDashboard() {
         property: `Property ${cert.property_id}`,
         unit: cert.unit_id ? `Unit ${cert.unit_id}` : 'N/A',
         tenant: `Tenant ${cert.tenant_id}`,
-        type: cert.certification_type,
+        type: cert.cert_type,
         status: cert.certification_status,
         effectiveDate: cert.effective_date,
         expirationDate: expiryDate.toISOString(),

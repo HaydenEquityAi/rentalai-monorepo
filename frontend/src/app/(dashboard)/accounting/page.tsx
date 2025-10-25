@@ -109,15 +109,17 @@ export default function AccountingDashboard() {
 
   // Calculate key metrics from accounts
   const calculateMetrics = (accounts: Account[]): DashboardMetrics => {
-    const assets = accounts
+    const safeAccounts = accounts || [];
+    
+    const assets = safeAccounts
       .filter(acc => acc.account_type === 'asset')
       .reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
 
-    const revenue = accounts
+    const revenue = safeAccounts
       .filter(acc => acc.account_type === 'revenue')
       .reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
 
-    const expenses = accounts
+    const expenses = safeAccounts
       .filter(acc => acc.account_type === 'expense')
       .reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
 
@@ -157,7 +159,7 @@ export default function AccountingDashboard() {
     }
 
     // Calculate monthly totals
-    transactions.forEach(transaction => {
+    (transactions || []).forEach(transaction => {
       const transactionDate = new Date(transaction.transaction_date);
       const monthIndex = months.findIndex(m => 
         new Date(m.month + ' 1, ' + now.getFullYear()).getMonth() === transactionDate.getMonth()
@@ -183,6 +185,7 @@ export default function AccountingDashboard() {
 
   // Generate budget vs actual data
   const generateBudgetData = (accounts: Account[]): BudgetData[] => {
+    const safeAccounts = accounts || [];
     const categories = ['Revenue', 'Operating Expenses', 'Administrative', 'Maintenance', 'Marketing'];
     
     return categories.map(category => {
@@ -473,7 +476,7 @@ export default function AccountingDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {accounts.map((account) => (
+                {(accounts || []).map((account) => (
                   <div 
                     key={account.id} 
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -513,7 +516,7 @@ export default function AccountingDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {transactions.map((transaction) => (
+                {(transactions || []).map((transaction) => (
                   <div 
                     key={transaction.id} 
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"

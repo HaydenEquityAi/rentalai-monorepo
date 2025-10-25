@@ -137,10 +137,17 @@ export function DataTable<T extends Record<string, any>>({
   };
 
   const handleFilterChange = (field: string, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFilters(prev => {
+      if (!value || value === '__clear__') {
+        // Remove filter when value is empty or clear is selected
+        const { [field]: removed, ...rest } = prev;
+        return rest;
+      }
+      return {
+        ...prev,
+        [field]: value
+      };
+    });
   };
 
   const getSortIcon = (field: keyof T | string) => {
@@ -224,7 +231,7 @@ export function DataTable<T extends Record<string, any>>({
                         <SelectValue placeholder={col.label} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All</SelectItem>
+                        <SelectItem value="__clear__">Clear filter</SelectItem>
                         {Array.from(new Set(data.map(row => String(row[col.key])))).map(value => (
                           <SelectItem key={value} value={value}>{value}</SelectItem>
                         ))}

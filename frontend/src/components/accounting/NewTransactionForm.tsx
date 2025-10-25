@@ -288,7 +288,6 @@ export function NewTransactionForm({ onSuccess, onCancel }: NewTransactionFormPr
               <SelectValue placeholder="Select vendor" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No vendor</SelectItem>
               {vendors.map((vendor) => (
                 <SelectItem key={vendor.id} value={vendor.id}>
                   {vendor.name}

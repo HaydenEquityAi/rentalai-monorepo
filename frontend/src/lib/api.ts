@@ -83,27 +83,27 @@ export const authAPI = {
 // Properties API
 export const propertiesAPI = {
   list: async () => {
-    const response = await apiClient.get('/properties/');
+    const response = await apiClient.get('/api/v1/properties/');
     return response;
   },
   
   get: async (id: string) => {
-    const response = await apiClient.get(`/properties/${id}`);
+    const response = await apiClient.get(`/api/v1/properties/${id}`);
     return response;
   },
   
   create: async (data: any) => {
-    const response = await apiClient.post('/properties/', data);
+    const response = await apiClient.post('/api/v1/properties/', data);
     return response;
   },
   
   update: async (id: string, data: any) => {
-    const response = await apiClient.put(`/properties/${id}`, data);
+    const response = await apiClient.put(`/api/v1/properties/${id}`, data);
     return response;
   },
   
   delete: async (id: string) => {
-    const response = await apiClient.delete(`/properties/${id}`);
+    const response = await apiClient.delete(`/api/v1/properties/${id}`);
     return response;
   }
 };
@@ -111,27 +111,27 @@ export const propertiesAPI = {
 // Leads API
 export const leadsAPI = {
   list: async () => {
-    const response = await apiClient.get('/leads/');
+    const response = await apiClient.get('/api/v1/leads/');
     return response;
   },
   
   get: async (id: string) => {
-    const response = await apiClient.get(`/leads/${id}`);
+    const response = await apiClient.get(`/api/v1/leads/${id}`);
     return response;
   },
   
   create: async (data: any) => {
-    const response = await apiClient.post('/leads/', data);
+    const response = await apiClient.post('/api/v1/leads/', data);
     return response;
   },
   
   update: async (id: string, data: any) => {
-    const response = await apiClient.put(`/leads/${id}`, data);
+    const response = await apiClient.put(`/api/v1/leads/${id}`, data);
     return response;
   },
   
   delete: async (id: string) => {
-    const response = await apiClient.delete(`/leads/${id}`);
+    const response = await apiClient.delete(`/api/v1/leads/${id}`);
     return response;
   }
 };
@@ -139,27 +139,27 @@ export const leadsAPI = {
 // Leases API
 export const leasesAPI = {
   list: async () => {
-    const response = await apiClient.get('/leases/');
+    const response = await apiClient.get('/api/v1/leases/');
     return response;
   },
   
   get: async (id: string) => {
-    const response = await apiClient.get(`/leases/${id}`);
+    const response = await apiClient.get(`/api/v1/leases/${id}`);
     return response;
   },
   
   create: async (data: any) => {
-    const response = await apiClient.post('/leases/', data);
+    const response = await apiClient.post('/api/v1/leases/', data);
     return response;
   },
   
   update: async (id: string, data: any) => {
-    const response = await apiClient.put(`/leases/${id}`, data);
+    const response = await apiClient.put(`/api/v1/leases/${id}`, data);
     return response;
   },
   
   delete: async (id: string) => {
-    const response = await apiClient.delete(`/leases/${id}`);
+    const response = await apiClient.delete(`/api/v1/leases/${id}`);
     return response;
   }
 };
@@ -167,27 +167,27 @@ export const leasesAPI = {
 // Maintenance API
 export const maintenanceAPI = {
   list: async () => {
-    const response = await apiClient.get('/maintenance/');
+    const response = await apiClient.get('/api/v1/maintenance/');
     return response;
   },
   
   get: async (id: string) => {
-    const response = await apiClient.get(`/maintenance/${id}`);
+    const response = await apiClient.get(`/api/v1/maintenance/${id}`);
     return response;
   },
   
   create: async (data: any) => {
-    const response = await apiClient.post('/maintenance/', data);
+    const response = await apiClient.post('/api/v1/maintenance/', data);
     return response;
   },
   
   update: async (id: string, data: any) => {
-    const response = await apiClient.put(`/maintenance/${id}`, data);
+    const response = await apiClient.put(`/api/v1/maintenance/${id}`, data);
     return response;
   },
   
   delete: async (id: string) => {
-    const response = await apiClient.delete(`/maintenance/${id}`);
+    const response = await apiClient.delete(`/api/v1/maintenance/${id}`);
     return response;
   }
 };
@@ -195,22 +195,22 @@ export const maintenanceAPI = {
 // Users API
 export const usersAPI = {
   getMe: async () => {
-    const response = await apiClient.get('/users/me');
+    const response = await apiClient.get('/api/v1/users/me');
     return response;
   },
   
   updateMe: async (data: any) => {
-    const response = await apiClient.put('/users/me', data);
+    const response = await apiClient.put('/api/v1/users/me', data);
     return response;
   },
   
   updatePassword: async (data: { current_password: string; new_password: string }) => {
-    const response = await apiClient.put('/users/me/password', data);
+    const response = await apiClient.put('/api/v1/users/me/password', data);
     return response;
   },
   
   updateNotifications: async (data: any) => {
-    const response = await apiClient.put('/users/me/notifications', data);
+    const response = await apiClient.put('/api/v1/users/me/notifications', data);
     return response;
   }
 };
@@ -218,7 +218,7 @@ export const usersAPI = {
 // Analytics API
 export const analyticsAPI = {
   getPortfolio: async () => {
-    const response = await apiClient.get('/analytics/portfolio');
+    const response = await apiClient.get('/api/v1/analytics/portfolio');
     return response;
   }
 };
@@ -229,7 +229,7 @@ export const aiAPI = {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await apiClient.post('/ai/parse-lease', formData, {
+    const response = await apiClient.post('/api/v1/ai/parse-lease', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -240,16 +240,16 @@ export const aiAPI = {
 
 // Accounting API
 export const accountingApi = {
-  getAccounts: () => apiClient.get('/accounting/accounts'),
-  createAccount: (data: any) => apiClient.post('/accounting/accounts', data),
-  getTransactions: () => apiClient.get('/accounting/transactions'),
-  createTransaction: (data: any) => apiClient.post('/accounting/transactions', data),
+  getAccounts: () => apiClient.get('/api/v1/accounting/accounts'),
+  createAccount: (data: any) => apiClient.post('/api/v1/accounting/accounts', data),
+  getTransactions: () => apiClient.get('/api/v1/accounting/transactions'),
+  createTransaction: (data: any) => apiClient.post('/api/v1/accounting/transactions', data),
   getProfitLoss: (startDate: string, endDate: string, propertyId?: string) => {
     const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
     if (propertyId) params.append('property_id', propertyId);
-    return apiClient.get(`/accounting/reports/profit-loss?${params}`);
+    return apiClient.get(`/api/v1/accounting/reports/profit-loss?${params}`);
   },
   getBalanceSheet: (asOfDate: string) => {
-    return apiClient.get(`/accounting/reports/balance-sheet?as_of_date=${asOfDate}`);
+    return apiClient.get(`/api/v1/accounting/reports/balance-sheet?as_of_date=${asOfDate}`);
   },
 };

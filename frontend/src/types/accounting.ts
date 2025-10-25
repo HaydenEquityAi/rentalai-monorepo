@@ -6,6 +6,7 @@
 // Enums
 export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
 export type TransactionType = 'debit' | 'credit';
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 
 // Base interfaces
 export interface BaseEntity {
@@ -74,7 +75,7 @@ export interface Invoice extends BaseEntity {
   tax_amount: string; // Decimal as string
   total_amount: string; // Decimal as string
   amount_paid: string; // Decimal as string
-  status: string;
+  status: InvoiceStatus;
   notes?: string;
   line_items?: InvoiceLineItem[]; // Optional array of line items
 }
@@ -219,7 +220,7 @@ export interface CreateInvoiceRequest {
   tax_amount?: string;
   total_amount: string;
   amount_paid?: string;
-  status?: string;
+  status?: InvoiceStatus;
   notes?: string;
   line_items: CreateInvoiceLineItemRequest[];
 }
@@ -234,7 +235,7 @@ export interface UpdateInvoiceRequest {
   tax_amount?: string;
   total_amount?: string;
   amount_paid?: string;
-  status?: string;
+  status?: InvoiceStatus;
   notes?: string;
   line_items?: CreateInvoiceLineItemRequest[];
 }
@@ -301,7 +302,7 @@ export interface VendorFilters {
 export interface InvoiceFilters {
   vendor_id?: string;
   property_id?: string;
-  status?: string;
+  status?: InvoiceStatus;
 }
 
 export interface BankAccountFilters {

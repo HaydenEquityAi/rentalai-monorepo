@@ -140,6 +140,14 @@ export default function HUDComplianceDashboard() {
     }
   };
 
+  // Helper function to calculate expiration date (1 year from effective_date)
+  const getExpirationDate = (effectiveDate: string): Date => {
+    const effective = new Date(effectiveDate);
+    const expiration = new Date(effective);
+    expiration.setFullYear(expiration.getFullYear() + 1);
+    return expiration;
+  };
+
   // Calculate key metrics
   const calculateMetrics = (certs: TenantIncomeCertification[], insp: REACInspection[]): DashboardMetrics => {
     const totalCertifications = certs.length;
@@ -148,7 +156,7 @@ export default function HUDComplianceDashboard() {
     const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
     
     const expiringSoon = certs.filter(cert => {
-      const expiryDate = new Date(cert.expiration_date);
+      const expiryDate = getExpirationDate(cert.effective_date);
       return expiryDate <= thirtyDaysFromNow && expiryDate > today;
     }).length;
 
@@ -161,7 +169,7 @@ export default function HUDComplianceDashboard() {
     const lastREACScore = lastInspection ? lastInspection.overall_score : 0;
     
     const currentCerts = certs.filter(cert => {
-      const expiryDate = new Date(cert.expiration_date);
+      const expiryDate = getExpirationDate(cert.effective_date);
       return expiryDate > today;
     }).length;
     
@@ -183,7 +191,7 @@ export default function HUDComplianceDashboard() {
 
     // Overdue certifications
     const overdueCerts = certs.filter(cert => {
-      const expiryDate = new Date(cert.expiration_date);
+      const expiryDate = getExpirationDate(cert.effective_date);
       return expiryDate < today && cert.status !== 'APPROVED';
     });
 
@@ -201,7 +209,7 @@ export default function HUDComplianceDashboard() {
     // Expiring soon certifications
     const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
     const expiringSoon = certs.filter(cert => {
-      const expiryDate = new Date(cert.expiration_date);
+      const expiryDate = getExpirationDate(cert.effective_date);
       return expiryDate <= thirtyDaysFromNow && expiryDate > today;
     });
 
@@ -241,7 +249,7 @@ export default function HUDComplianceDashboard() {
   const generateCertificationSummary = (certs: TenantIncomeCertification[]): CertificationSummary[] => {
     return certs.map(cert => {
       const today = new Date();
-      const expiryDate = new Date(cert.expiration_date);
+      const expiryDate = getExpirationDate(cert.effective_date);
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
       return {
@@ -251,7 +259,7 @@ export default function HUDComplianceDashboard() {
         type: cert.certification_type,
         status: cert.status,
         effectiveDate: cert.effective_date,
-        expirationDate: cert.expiration_date,
+        expirationDate: expiryDate.toISOString(),
         daysUntilExpiry
       };
     });

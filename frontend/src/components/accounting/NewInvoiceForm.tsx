@@ -147,7 +147,7 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
   };
 
   const addLineItem = () => {
-    append({ description: '', amount: '0.00', account_id: '' });
+    append({ description: '', quantity: '1', unit_price: '0.00', amount: '0.00', account_id: '' });
   };
 
   const removeLineItem = (index: number) => {

@@ -689,47 +689,49 @@ export default function FinancialReportsPage() {
               <CardContent>
                 <div className="h-96">
                   <ResponsiveContainer width="100%" height="100%">
-                    {selectedReportType === 'profit-loss' && (
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                        <Bar dataKey="revenue" fill="#10b981" name="Revenue" />
-                        <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
-                        <Bar dataKey="netIncome" fill="#3b82f6" name="Net Income" />
-                      </BarChart>
-                    )}
+                    <>
+                      {selectedReportType === 'profit-loss' && (
+                        <BarChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                          <Bar dataKey="revenue" fill="#10b981" name="Revenue" />
+                          <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
+                          <Bar dataKey="netIncome" fill="#3b82f6" name="Net Income" />
+                        </BarChart>
+                      )}
 
-                    {selectedReportType === 'balance-sheet' && (
-                      <PieChart>
-                        <Pie
-                          data={chartData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={120}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                      </PieChart>
-                    )}
+                      {selectedReportType === 'balance-sheet' && (
+                        <PieChart>
+                          <Pie
+                            data={chartData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={120}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {chartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        </PieChart>
+                      )}
 
-                    {selectedReportType === 'cash-flow' && (
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="category" />
-                        <YAxis />
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                        <Bar dataKey="amount" fill="#8b5cf6" name="Cash Flow" />
-                      </BarChart>
-                    )}
+                      {selectedReportType === 'cash-flow' && (
+                        <BarChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="category" />
+                          <YAxis />
+                          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                          <Bar dataKey="amount" fill="#8b5cf6" name="Cash Flow" />
+                        </BarChart>
+                      )}
+                    </>
                   </ResponsiveContainer>
                 </div>
               </CardContent>

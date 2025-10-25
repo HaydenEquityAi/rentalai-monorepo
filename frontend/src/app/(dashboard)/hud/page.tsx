@@ -703,8 +703,8 @@ export default function HUDComplianceDashboard() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getInspectionStatusColor(inspection.inspection_status)}>
-                            {inspection.inspection_status}
+                          <Badge className={getInspectionStatusColor(inspection.status)}>
+                            {inspection.status}
                           </Badge>
                         </TableCell>
                         <TableCell>

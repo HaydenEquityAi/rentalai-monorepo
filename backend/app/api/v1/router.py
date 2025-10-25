@@ -10,6 +10,7 @@ api_router = APIRouter()
 
 # Import and include all sub-routers here
 from app.api.v1.ai_routes import ai_router
+from app.api.v1.accounting import accounting_router
 from app.api.v1.auth import auth_router
 from app.api.v1.properties import properties_router
 from app.api.v1.units import units_router
@@ -23,6 +24,7 @@ from app.api.v1.users import users_router
 
 # Include routers
 api_router.include_router(auth_router)
+api_router.include_router(accounting_router, prefix="/accounting", tags=["Accounting"])
 api_router.include_router(ai_router)
 api_router.include_router(properties_router, prefix="/properties", tags=["properties"])
 api_router.include_router(units_router, prefix="/units", tags=["units"])

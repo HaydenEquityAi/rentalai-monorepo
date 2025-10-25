@@ -147,4 +147,3 @@ class BankAccount(Base):
     deleted_at = Column(DateTime)
     organization = relationship("Organization")
     account = relationship("Account")
-EOF

@@ -11,7 +11,7 @@ from datetime import datetime
 from enum import Enum
 import uuid
 
-from app.core.database import Base
+from . import Base
 
 
 class SubscriptionPlan(str, Enum):

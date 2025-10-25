@@ -161,7 +161,10 @@ export default function ChartOfAccountsPage() {
 
     try {
       setSubmitting(true);
-      await accountingService.createAccount(formData);
+      await accountingService.createAccount({
+        ...formData,
+        account_name: formData.name
+      });
       await fetchAccounts();
       setCreateDialogOpen(false);
       resetForm();
@@ -179,7 +182,10 @@ export default function ChartOfAccountsPage() {
 
     try {
       setSubmitting(true);
-      await accountingService.updateAccount(selectedAccount.id, formData);
+      await accountingService.updateAccount(selectedAccount.id, {
+        ...formData,
+        account_name: formData.name
+      });
       await fetchAccounts();
       setEditDialogOpen(false);
       setSelectedAccount(null);

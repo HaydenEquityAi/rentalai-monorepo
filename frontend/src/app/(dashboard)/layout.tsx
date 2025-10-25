@@ -26,6 +26,7 @@ import {
   ChevronDown,
   CreditCard,
   Calculator,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { authAPI } from '@/lib/api';
@@ -46,6 +47,7 @@ const navigation: NavItem[] = [
   { name: 'Maintenance', href: '/maintenance', icon: Wrench, badge: 5 },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Accounting', href: '/accounting', icon: Calculator },
+  { name: 'HUD Compliance', href: '/hud', icon: Shield },
   { name: 'AI Tools', href: '/ai-tools', icon: Bot },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];

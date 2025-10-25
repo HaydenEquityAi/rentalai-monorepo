@@ -402,22 +402,11 @@ export default function InvoicesPage() {
     }
   };
 
-  // Delete invoice
+  // Delete invoice - DISABLED (backend doesn't support invoice deletion)
   const handleDeleteInvoice = async () => {
-    if (!selectedInvoice) return;
-
-    try {
-      setSubmitting(true);
-      await accountingService.deleteInvoice(selectedInvoice.id);
-      await fetchData();
-      setDeleteDialogOpen(false);
-      setSelectedInvoice(null);
-    } catch (err) {
-      console.error('Error deleting invoice:', err);
-      setError('Failed to delete invoice. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
+    setError('Invoice deletion is not supported. Please contact support if you need to delete an invoice.');
+    setDeleteDialogOpen(false);
+    setSelectedInvoice(null);
   };
 
   // Open edit dialog

@@ -132,21 +132,14 @@ export default function FinancialReportsPage() {
             start_date: reportParams.start_date,
             end_date: reportParams.end_date
           };
-          data = await accountingService.getProfitLoss(
-            profitLossRequest.property_id,
-            profitLossRequest.start_date,
-            profitLossRequest.end_date
-          );
+          data = await accountingService.getProfitLoss(profitLossRequest);
           break;
         case 'balance-sheet':
           const balanceSheetRequest: BalanceSheetRequest = {
             property_id: reportParams.property_id,
             as_of_date: reportParams.as_of_date
           };
-          data = await accountingService.getBalanceSheet(
-            balanceSheetRequest.property_id,
-            balanceSheetRequest.as_of_date
-          );
+          data = await accountingService.getBalanceSheet(balanceSheetRequest);
           break;
         case 'cash-flow':
           const cashFlowRequest: CashFlowRequest = {
@@ -154,11 +147,7 @@ export default function FinancialReportsPage() {
             start_date: reportParams.start_date,
             end_date: reportParams.end_date
           };
-          data = await accountingService.getCashFlow(
-            cashFlowRequest.property_id,
-            cashFlowRequest.start_date,
-            cashFlowRequest.end_date
-          );
+          data = await accountingService.getCashFlow(cashFlowRequest);
           break;
       }
 
@@ -242,20 +231,19 @@ export default function FinancialReportsPage() {
     if (!selectedReportType || !reportParams.start_date || !reportParams.end_date) return;
 
     try {
-      const startDate = new Date(reportParams.start_date);
-      const endDate = new Date(reportParams.end_date);
-      
       if (selectedReportType === 'balance-sheet') {
-        await accountingService.downloadBalanceSheetPDF(
-          reportParams.property_id,
-          reportParams.as_of_date
-        );
+        const filters: BalanceSheetRequest = {
+          property_id: reportParams.property_id,
+          as_of_date: reportParams.as_of_date
+        };
+        await accountingService.downloadBalanceSheetPDF(filters);
       } else {
-        await accountingService.downloadProfitLossPDF(
-          reportParams.property_id,
-          reportParams.start_date,
-          reportParams.end_date
-        );
+        const filters: ProfitLossRequest = {
+          property_id: reportParams.property_id,
+          start_date: reportParams.start_date,
+          end_date: reportParams.end_date
+        };
+        await accountingService.downloadProfitLossPDF(filters);
       }
     } catch (err) {
       console.error('Error downloading PDF:', err);
@@ -268,20 +256,19 @@ export default function FinancialReportsPage() {
     if (!selectedReportType || !reportParams.start_date || !reportParams.end_date) return;
 
     try {
-      const startDate = new Date(reportParams.start_date);
-      const endDate = new Date(reportParams.end_date);
-      
       if (selectedReportType === 'balance-sheet') {
-        await accountingService.downloadBalanceSheetExcel(
-          reportParams.property_id,
-          reportParams.as_of_date
-        );
+        const filters: BalanceSheetRequest = {
+          property_id: reportParams.property_id,
+          as_of_date: reportParams.as_of_date
+        };
+        await accountingService.downloadBalanceSheetExcel(filters);
       } else {
-        await accountingService.downloadProfitLossExcel(
-          reportParams.property_id,
-          reportParams.start_date,
-          reportParams.end_date
-        );
+        const filters: ProfitLossRequest = {
+          property_id: reportParams.property_id,
+          start_date: reportParams.start_date,
+          end_date: reportParams.end_date
+        };
+        await accountingService.downloadProfitLossExcel(filters);
       }
     } catch (err) {
       console.error('Error downloading Excel:', err);

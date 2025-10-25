@@ -209,22 +209,11 @@ export default function ChartOfAccountsPage() {
     }
   };
 
-  // Delete account
+  // Delete account - DISABLED (backend doesn't support account deletion)
   const handleDeleteAccount = async () => {
-    if (!selectedAccount) return;
-
-    try {
-      setSubmitting(true);
-      await accountingService.deleteAccount(selectedAccount.id);
-      await fetchAccounts();
-      setDeleteDialogOpen(false);
-      setSelectedAccount(null);
-    } catch (err) {
-      console.error('Error deleting account:', err);
-      setError('Failed to delete account. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
+    setError('Account deletion is not supported. Please contact support if you need to delete an account.');
+    setDeleteDialogOpen(false);
+    setSelectedAccount(null);
   };
 
   // Open edit dialog

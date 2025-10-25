@@ -14,7 +14,7 @@ from datetime import datetime, date, timedelta
 from app.core.database import get_db
 from app.core.security import get_current_user, get_current_org
 from app.models import (
-    Lease, Unit, Property, LeaseStatus, UnitStatus
+    Lease, Unit, Property, Tenant, LeaseStatus, UnitStatus
 )
 from app.schemas import (
     LeaseResponse, LeaseCreate, LeaseUpdate,
@@ -36,10 +36,7 @@ def _enrich_lease_dict(lease) -> dict:
         "id": str(lease.id),
         "org_id": str(lease.org_id),
         "unit_id": str(lease.unit_id),
-        "tenant_first_name": lease.tenant_first_name,
-        "tenant_last_name": lease.tenant_last_name,
-        "tenant_email": lease.tenant_email,
-        "tenant_phone": lease.tenant_phone,
+        "tenant_id": str(lease.tenant_id),
         "start_date": lease.start_date.isoformat(),
         "end_date": lease.end_date.isoformat(),
         "monthly_rent": float(lease.monthly_rent),
@@ -54,7 +51,10 @@ def _enrich_lease_dict(lease) -> dict:
     }
     
     # Add computed fields for frontend
-    lease_dict['tenant_name'] = f"{lease.tenant_first_name} {lease.tenant_last_name}"
+    if hasattr(lease, 'tenant') and lease.tenant:
+        lease_dict['tenant_name'] = f"{lease.tenant.first_name} {lease.tenant.last_name}"
+        lease_dict['tenant_email'] = lease.tenant.email
+        lease_dict['tenant_phone'] = lease.tenant.phone
     
     # Add related data if loaded
     if hasattr(lease, 'unit') and lease.unit:
@@ -98,7 +98,7 @@ async def list_leases(
         query = query.where(Lease.unit_id == unit_id)
     
     if tenant_email:
-        query = query.where(Lease.tenant_email.ilike(f"%{tenant_email}%"))
+        query = query.join(Tenant).where(Tenant.email.ilike(f"%{tenant_email}%"))
     
     # Get total count
     count_query = select(func.count()).select_from(query.subquery())
@@ -181,10 +181,7 @@ async def create_lease(
     lease = Lease(
         org_id=org_id,
         unit_id=lease_data.unit_id,
-        tenant_first_name=lease_data.tenant_first_name,
-        tenant_last_name=lease_data.tenant_last_name,
-        tenant_email=lease_data.tenant_email,
-        tenant_phone=lease_data.tenant_phone,
+        tenant_id=lease_data.tenant_id,
         start_date=lease_data.start_date,
         end_date=lease_data.end_date,
         monthly_rent=lease_data.monthly_rent,

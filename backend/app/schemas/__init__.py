@@ -405,11 +405,8 @@ class LeaseBase(BaseSchema):
 class LeaseCreate(LeaseBase):
     """Create lease"""
     unit_id: UUID
+    tenant_id: UUID
     application_id: Optional[UUID] = None
-    tenant_first_name: str
-    tenant_last_name: str
-    tenant_email: str
-    tenant_phone: str
     deposit_amount: Decimal = Field(..., ge=0)
     status: LeaseStatus = LeaseStatus.PENDING
     rent_due_day: int = 1
@@ -429,10 +426,7 @@ class LeaseResponse(LeaseBase, TimestampSchema):
     id: UUID
     org_id: UUID
     unit_id: UUID
-    tenant_first_name: str
-    tenant_last_name: str
-    tenant_email: str
-    tenant_phone: str
+    tenant_id: UUID
     deposit_amount: Decimal
     rent_due_day: int
     late_fee_amount: Optional[Decimal]

@@ -68,7 +68,7 @@ export default function UnitsPage() {
     amenities: '',
   });
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   useEffect(() => {
     const loadData = async () => {
@@ -83,7 +83,7 @@ export default function UnitsPage() {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/units/`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/units/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -108,7 +108,7 @@ export default function UnitsPage() {
   const fetchProperties = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/properties/`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/properties/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -144,7 +144,7 @@ export default function UnitsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/units/`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/units/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -187,7 +187,7 @@ export default function UnitsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/units/${editingUnit.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/units/${editingUnit.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -230,7 +230,7 @@ export default function UnitsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/units/${deletingUnitId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/units/${deletingUnitId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

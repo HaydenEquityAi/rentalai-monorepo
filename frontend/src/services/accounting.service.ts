@@ -53,7 +53,7 @@ class AccountingServiceError extends Error {
 }
 
 export class AccountingService {
-  private baseUrl = 'http://localhost:8004/api/v1';
+  private baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`;
   private basePath = '/accounting';
 
   private async getAuthHeaders(): Promise<HeadersInit> {

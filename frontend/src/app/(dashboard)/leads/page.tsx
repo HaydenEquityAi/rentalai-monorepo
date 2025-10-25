@@ -77,7 +77,7 @@ export default function LeadsPage() {
     notes: '',
   });
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   useEffect(() => {
     fetchLeads();
@@ -88,7 +88,7 @@ export default function LeadsPage() {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/leads/`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/leads/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -127,7 +127,7 @@ export default function LeadsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/leads/`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/leads/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -167,7 +167,7 @@ export default function LeadsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/leads/${editingLead.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/leads/${editingLead.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -207,7 +207,7 @@ export default function LeadsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/leads/${deletingLeadId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/leads/${deletingLeadId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

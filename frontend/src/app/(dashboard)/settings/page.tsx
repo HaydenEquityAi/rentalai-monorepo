@@ -67,7 +67,7 @@ export default function SettingsPage() {
     confirm_password: '',
   });
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   useEffect(() => {
     fetchUserData();
@@ -119,7 +119,7 @@ export default function SettingsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/users/me`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -148,7 +148,7 @@ export default function SettingsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/users/me`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -188,7 +188,7 @@ export default function SettingsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/users/me/password`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/me/password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -224,7 +224,7 @@ export default function SettingsPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/users/me/notifications`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/me/notifications`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

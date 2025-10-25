@@ -53,7 +53,7 @@ export interface LeaseParseResult {
 // Auth API
 export const authAPI = {
   login: async (email: string, password: string) => {
-    const response = await apiClient.post('/auth/login', { email, password });
+    const response = await apiClient.post('/api/v1/auth/login', { email, password });
     return response;
   },
   
@@ -65,12 +65,12 @@ export const authAPI = {
     org_name?: string;
     phone: string;
   }) => {
-    const response = await apiClient.post('/auth/register', userData);
+    const response = await apiClient.post('/api/v1/auth/register', userData);
     return response;
   },
   
   getMe: async () => {
-    const response = await apiClient.get('/auth/me');
+    const response = await apiClient.get('/api/v1/auth/me');
     return response;
   },
   

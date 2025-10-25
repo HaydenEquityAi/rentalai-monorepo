@@ -78,7 +78,7 @@ export default function SettingsPage() {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

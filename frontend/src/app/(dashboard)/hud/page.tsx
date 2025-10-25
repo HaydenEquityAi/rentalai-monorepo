@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Users, 
   AlertTriangle, 
@@ -29,7 +28,9 @@ import {
   Info,
   Building2,
   Home,
-  ClipboardCheck
+  ClipboardCheck,
+  Download,
+  MoreHorizontal
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -54,6 +55,13 @@ import {
   InspectionType,
   InspectionStatus
 } from '@/types/hud';
+import { Modal } from '@/components/ui/modal';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { MetricCard, AlertCard, QuickActionCard } from '@/components/ui/metrics';
+import { ReportDropdown, ActionButton, TableActionMenu } from '@/components/ui/actions';
+import { useToast } from '@/components/ui/toast';
+import { NewCertificationForm } from '@/components/hud/NewCertificationForm';
+import { NewInspectionForm } from '@/components/hud/NewInspectionForm';
 
 interface DashboardMetrics {
   totalCertifications: number;
@@ -102,6 +110,134 @@ export default function HUDComplianceDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('certifications');
+  
+  // Modal states
+  const [showNewCertification, setShowNewCertification] = useState(false);
+  const [showNewInspection, setShowNewInspection] = useState(false);
+  const [reportLoading, setReportLoading] = useState<string | null>(null);
+  
+  const { success, error: showError } = useToast();
+
+  // Define table columns
+  const certificationColumns: Column<CertificationSummary>[] = [
+    {
+      key: 'tenant',
+      label: 'Tenant',
+      sortable: true,
+      filterable: true
+    },
+    {
+      key: 'property',
+      label: 'Property',
+      sortable: true,
+      filterable: true
+    },
+    {
+      key: 'unit',
+      label: 'Unit',
+      sortable: true,
+      filterable: true
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      sortable: true,
+      filterable: true,
+      render: (value: CertificationType) => (
+        <Badge className={getCertificationTypeColor(value)}>
+          {value}
+        </Badge>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      filterable: true,
+      render: (value: CertificationStatus) => (
+        <Badge className={getCertificationStatusColor(value)}>
+          {value}
+        </Badge>
+      )
+    },
+    {
+      key: 'effectiveDate',
+      label: 'Effective Date',
+      sortable: true,
+      render: (value: string) => formatDate(value)
+    },
+    {
+      key: 'expirationDate',
+      label: 'Expiration Date',
+      sortable: true,
+      render: (value: string, row: CertificationSummary) => (
+        <div className="flex items-center gap-2">
+          {formatDate(value)}
+          {row.daysUntilExpiry < 30 && (
+            <Badge variant="outline" className="text-red-600 border-red-200">
+              {row.daysUntilExpiry}d
+            </Badge>
+          )}
+        </div>
+      )
+    }
+  ];
+
+  const inspectionColumns: Column<InspectionSummary>[] = [
+    {
+      key: 'property',
+      label: 'Property',
+      sortable: true,
+      filterable: true
+    },
+    {
+      key: 'inspectionDate',
+      label: 'Inspection Date',
+      sortable: true,
+      render: (value: string) => formatDate(value)
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      sortable: true,
+      filterable: true,
+      render: (value: InspectionType) => (
+        <Badge variant="outline">{value}</Badge>
+      )
+    },
+    {
+      key: 'overallScore',
+      label: 'Overall Score',
+      sortable: true,
+      render: (value: number) => (
+        <div className="flex items-center gap-2">
+          <span className={`font-semibold ${getScoreColor(value)}`}>
+            {value}
+          </span>
+          <Progress value={value} className="w-16 h-2" />
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      filterable: true,
+      render: (value: InspectionStatus) => (
+        <Badge className={getInspectionStatusColor(value)}>
+          {value}
+        </Badge>
+      )
+    },
+    {
+      key: 'deficiencies',
+      label: 'Deficiencies',
+      sortable: true,
+      render: (value: number) => (
+        <Badge variant="outline">{value}</Badge>
+      )
+    }
+  ];
 
   // Fetch all dashboard data
   const fetchDashboardData = async () => {
@@ -135,8 +271,60 @@ export default function HUDComplianceDashboard() {
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load compliance data. Please try again.');
+      showError('Failed to load compliance data', 'Please check your connection and try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle form success
+  const handleCertificationSuccess = () => {
+    setShowNewCertification(false);
+    success('Certification Created', 'New income certification has been created successfully.');
+    fetchDashboardData();
+  };
+
+  const handleInspectionSuccess = () => {
+    setShowNewInspection(false);
+    success('Inspection Recorded', 'New REAC inspection has been recorded successfully.');
+    fetchDashboardData();
+  };
+
+  // Handle report generation
+  const handleGenerateReport = async (reportType: string) => {
+    try {
+      setReportLoading(reportType);
+      
+      // Mock report generation - replace with actual API calls
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      success('Report Generated', `${reportType} report has been generated and downloaded.`);
+    } catch (err) {
+      showError('Report Generation Failed', 'Failed to generate report. Please try again.');
+    } finally {
+      setReportLoading(null);
+    }
+  };
+
+  // Handle table actions
+  const handleViewCertification = (cert: CertificationSummary) => {
+    // Implement view certification logic
+    console.log('View certification:', cert);
+  };
+
+  const handleEditCertification = (cert: CertificationSummary) => {
+    // Implement edit certification logic
+    console.log('Edit certification:', cert);
+  };
+
+  const handleSubmitCertification = async (cert: CertificationSummary) => {
+    try {
+      // Implement submit certification logic
+      await hudService.submitHUD50059(cert.property);
+      success('Certification Submitted', 'HUD 50059 form has been submitted successfully.');
+      fetchDashboardData();
+    } catch (err) {
+      showError('Submission Failed', 'Failed to submit certification. Please try again.');
     }
   };
 
@@ -421,86 +609,91 @@ export default function HUDComplianceDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchDashboardData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Certification
-          </Button>
+          <ActionButton
+            label="Refresh"
+            icon={<RefreshCw className="h-4 w-4" />}
+            onClick={fetchDashboardData}
+            variant="outline"
+          />
+          <ActionButton
+            label="New Certification"
+            icon={<Plus className="h-4 w-4" />}
+            onClick={() => setShowNewCertification(true)}
+          />
+          <ActionButton
+            label="Record Inspection"
+            icon={<ClipboardCheck className="h-4 w-4" />}
+            onClick={() => setShowNewInspection(true)}
+            variant="outline"
+          />
+          <ReportDropdown
+            reports={[
+              {
+                label: 'All Certifications',
+                type: 'pdf',
+                onGenerate: () => handleGenerateReport('All Certifications'),
+                loading: reportLoading === 'All Certifications'
+              },
+              {
+                label: 'Expiring Certifications',
+                type: 'pdf',
+                onGenerate: () => handleGenerateReport('Expiring Certifications'),
+                loading: reportLoading === 'Expiring Certifications'
+              },
+              {
+                label: 'REAC Inspection History',
+                type: 'pdf',
+                onGenerate: () => handleGenerateReport('REAC Inspection History'),
+                loading: reportLoading === 'REAC Inspection History'
+              },
+              {
+                label: 'Compliance Summary',
+                type: 'pdf',
+                onGenerate: () => handleGenerateReport('Compliance Summary'),
+                loading: reportLoading === 'Compliance Summary'
+              }
+            ]}
+          />
         </div>
       </div>
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Certifications */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-blue-600">Total Certifications</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-2xl font-bold text-blue-700">
-              {metrics?.totalCertifications || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Active income certifications
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Expiring Soon */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-red-600">Expiring Soon</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-2xl font-bold text-red-700">
-              {metrics?.expiringSoon || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Within 30 days
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Pending Submissions */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-yellow-600/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-yellow-600">Pending 50059</CardTitle>
-            <FileText className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-2xl font-bold text-yellow-700">
-              {metrics?.pendingSubmissions || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting submission
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Last REAC Score */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-green-600">Last REAC Score</CardTitle>
-            <Shield className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent className="relative">
-            <div className={`text-2xl font-bold ${getScoreColor(metrics?.lastREACScore || 0)}`}>
-              {metrics?.lastREACScore || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Overall inspection score
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Total Certifications"
+          value={metrics?.totalCertifications || 0}
+          description="Active income certifications"
+          icon={<Users className="h-4 w-4" />}
+          color="blue"
+          loading={loading}
+        />
+        
+        <MetricCard
+          title="Expiring Soon"
+          value={metrics?.expiringSoon || 0}
+          description="Within 30 days"
+          icon={<AlertTriangle className="h-4 w-4" />}
+          color="red"
+          loading={loading}
+        />
+        
+        <MetricCard
+          title="Pending 50059"
+          value={metrics?.pendingSubmissions || 0}
+          description="Awaiting submission"
+          icon={<FileText className="h-4 w-4" />}
+          color="yellow"
+          loading={loading}
+        />
+        
+        <MetricCard
+          title="Last REAC Score"
+          value={metrics?.lastREACScore || 0}
+          description="Overall inspection score"
+          icon={<Shield className="h-4 w-4" />}
+          color="green"
+          loading={loading}
+        />
       </div>
 
       {/* Main Content Tabs */}
@@ -514,294 +707,128 @@ export default function HUDComplianceDashboard() {
 
         {/* Certifications Tab */}
         <TabsContent value="certifications" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Income Certifications ({certificationSummary.length})
-              </CardTitle>
-              <CardDescription>
-                All tenant income certifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tenant</TableHead>
-                      <TableHead>Property</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Effective Date</TableHead>
-                      <TableHead>Expiration Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {certificationSummary.map((cert, index) => (
-                      <TableRow key={index} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{cert.tenant}</TableCell>
-                        <TableCell>{cert.property}</TableCell>
-                        <TableCell className="font-mono">{cert.unit}</TableCell>
-                        <TableCell>
-                          <Badge className={getCertificationTypeColor(cert.type)}>
-                            {cert.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getCertificationStatusColor(cert.status)}>
-                            {cert.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(cert.effectiveDate)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {formatDate(cert.expirationDate)}
-                            {cert.daysUntilExpiry < 30 && (
-                              <Badge variant="outline" className="text-red-600 border-red-200">
-                                {cert.daysUntilExpiry}d
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            {cert.status === 'pending' && (
-                              <Button variant="ghost" size="sm" className="text-green-600">
-                                <Send className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <DataTable
+            data={certificationSummary}
+            columns={certificationColumns}
+            searchable={true}
+            filterable={true}
+            sortable={true}
+            pagination={true}
+            pageSize={10}
+            exportable={true}
+            onExport={() => handleGenerateReport('Certifications Export')}
+            actions={{
+              view: handleViewCertification,
+              edit: handleEditCertification,
+              delete: (cert) => {
+                if (cert.status === 'pending') {
+                  handleSubmitCertification(cert);
+                }
+              }
+            }}
+            loading={loading}
+            emptyMessage="No certifications found"
+          />
         </TabsContent>
 
         {/* Expiring Soon Tab */}
         <TabsContent value="expiring" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                Certifications Expiring Soon ({certificationSummary.filter(c => c.daysUntilExpiry < 30).length})
-              </CardTitle>
-              <CardDescription>
-                Certifications that need renewal within 30 days
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tenant</TableHead>
-                      <TableHead>Property</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Days Until Expiry</TableHead>
-                      <TableHead>Expiration Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {certificationSummary
-                      .filter(cert => cert.daysUntilExpiry < 30)
-                      .map((cert, index) => (
-                        <TableRow 
-                          key={index} 
-                          className={`hover:bg-muted/50 ${cert.daysUntilExpiry < 0 ? 'bg-red-50' : 'bg-yellow-50'}`}
-                        >
-                          <TableCell className="font-medium">{cert.tenant}</TableCell>
-                          <TableCell>{cert.property}</TableCell>
-                          <TableCell className="font-mono">{cert.unit}</TableCell>
-                          <TableCell>
-                            <Badge className={getCertificationTypeColor(cert.type)}>
-                              {cert.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant="outline" 
-                              className={cert.daysUntilExpiry < 0 ? 'text-red-600 border-red-200' : 'text-yellow-600 border-yellow-200'}
-                            >
-                              {cert.daysUntilExpiry < 0 ? 'Overdue' : `${cert.daysUntilExpiry} days`}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{formatDate(cert.expirationDate)}</TableCell>
-                          <TableCell className="text-right">
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                              Start Renewal
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <DataTable
+            data={certificationSummary.filter(c => c.daysUntilExpiry < 30)}
+            columns={certificationColumns}
+            searchable={true}
+            filterable={true}
+            sortable={true}
+            pagination={true}
+            pageSize={10}
+            exportable={true}
+            onExport={() => handleGenerateReport('Expiring Certifications Export')}
+            actions={{
+              view: handleViewCertification,
+              edit: handleEditCertification
+            }}
+            loading={loading}
+            emptyMessage="No certifications expiring soon"
+          />
         </TabsContent>
 
         {/* REAC Inspections Tab */}
         <TabsContent value="inspections" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                REAC Inspections ({inspectionSummary.length})
-              </CardTitle>
-              <CardDescription>
-                Inspection history and scores
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Property</TableHead>
-                      <TableHead>Inspection Date</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Overall Score</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Deficiencies</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inspectionSummary.map((inspection, index) => (
-                      <TableRow key={index} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{inspection.property}</TableCell>
-                        <TableCell>{formatDate(inspection.inspectionDate)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {inspection.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className={`font-semibold ${getScoreColor(inspection.overallScore)}`}>
-                              {inspection.overallScore}
-                            </span>
-                            <Progress 
-                              value={inspection.overallScore} 
-                              className="w-16 h-2"
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getInspectionStatusColor(inspection.status)}>
-                            {inspection.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {inspection.deficiencies}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <DataTable
+            data={inspectionSummary}
+            columns={inspectionColumns}
+            searchable={true}
+            filterable={true}
+            sortable={true}
+            pagination={true}
+            pageSize={10}
+            exportable={true}
+            onExport={() => handleGenerateReport('Inspections Export')}
+            actions={{
+              view: (inspection) => console.log('View inspection:', inspection),
+              edit: (inspection) => console.log('Edit inspection:', inspection)
+            }}
+            loading={loading}
+            emptyMessage="No inspections found"
+          />
         </TabsContent>
 
         {/* Compliance Alerts Tab */}
         <TabsContent value="alerts" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                Compliance Alerts ({alerts.length})
-              </CardTitle>
-              <CardDescription>
-                Important compliance notices and actions required
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {alerts.map((alert) => (
-                  <Alert key={alert.id} variant={alert.type === 'error' ? 'destructive' : 'default'}>
-                    <div className="flex items-center gap-2">
-                      {getAlertIcon(alert.type)}
-                      <div className="flex-1">
-                        <AlertDescription>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <strong>{alert.title}</strong> - {alert.description}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">{alert.count}</Badge>
-                              {alert.action && (
-                                <Button size="sm" variant="outline">
-                                  {alert.action}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </AlertDescription>
-                      </div>
-                    </div>
-                  </Alert>
-                ))}
-                {alerts.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                    <p className="text-lg font-medium">All Good!</p>
-                    <p>No compliance alerts at this time.</p>
-                  </div>
-                )}
+          <div className="space-y-4">
+            {alerts.map((alert) => (
+              <AlertCard
+                key={alert.id}
+                type={alert.type}
+                title={alert.title}
+                description={alert.description}
+                count={alert.count}
+                action={alert.action}
+                onAction={() => {
+                  if (alert.id === 'overdue') {
+                    setActiveTab('certifications');
+                  } else if (alert.id === 'expiring') {
+                    setActiveTab('expiring');
+                  } else if (alert.id === 'inspections') {
+                    setActiveTab('inspections');
+                  }
+                }}
+              />
+            ))}
+            {alerts.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                <p className="text-lg font-medium">All Good!</p>
+                <p>No compliance alerts at this time.</p>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common HUD compliance tasks
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button className="w-full justify-start" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              New Certification
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <ClipboardCheck className="h-4 w-4 mr-2" />
-              Record Inspection
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <FileText className="h-4 w-4 mr-2" />
-              Generate Report
-            </Button>
-          </CardContent>
-        </Card>
+        <QuickActionCard
+          title="Quick Actions"
+          description="Common HUD compliance tasks"
+          actions={[
+            {
+              label: 'New Certification',
+              icon: <Plus className="h-4 w-4" />,
+              onClick: () => setShowNewCertification(true)
+            },
+            {
+              label: 'Record Inspection',
+              icon: <ClipboardCheck className="h-4 w-4" />,
+              onClick: () => setShowNewInspection(true)
+            },
+            {
+              label: 'Generate Report',
+              icon: <FileText className="h-4 w-4" />,
+              onClick: () => handleGenerateReport('Compliance Report')
+            }
+          ]}
+        />
 
         {/* Compliance Score Overview */}
         <Card>
@@ -832,6 +859,33 @@ export default function HUDComplianceDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modals */}
+      <Modal
+        open={showNewCertification}
+        onOpenChange={setShowNewCertification}
+        title="New Income Certification"
+        description="Create a new tenant income certification"
+        size="xl"
+      >
+        <NewCertificationForm
+          onSuccess={handleCertificationSuccess}
+          onCancel={() => setShowNewCertification(false)}
+        />
+      </Modal>
+
+      <Modal
+        open={showNewInspection}
+        onOpenChange={setShowNewInspection}
+        title="Record REAC Inspection"
+        description="Record a new REAC inspection"
+        size="lg"
+      >
+        <NewInspectionForm
+          onSuccess={handleInspectionSuccess}
+          onCancel={() => setShowNewInspection(false)}
+        />
+      </Modal>
     </div>
   );
 }

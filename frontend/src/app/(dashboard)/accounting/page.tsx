@@ -19,7 +19,12 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Building2
+  Building2,
+  Download,
+  MoreHorizontal,
+  Eye,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -37,6 +42,13 @@ import {
 } from 'recharts';
 import { accountingService } from '@/services/accounting.service';
 import { Account, Transaction, AccountType, TransactionType } from '@/types/accounting';
+import { Modal } from '@/components/ui/modal';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { MetricCard, QuickActionCard } from '@/components/ui/metrics';
+import { ReportDropdown, ActionButton } from '@/components/ui/actions';
+import { useToast } from '@/components/ui/toast';
+import { NewTransactionForm } from '@/components/accounting/NewTransactionForm';
+import { NewInvoiceForm } from '@/components/accounting/NewInvoiceForm';
 
 interface DashboardMetrics {
   totalAssets: number;
@@ -72,6 +84,124 @@ export default function AccountingDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Modal states
+  const [showNewTransaction, setShowNewTransaction] = useState(false);
+  const [showNewInvoice, setShowNewInvoice] = useState(false);
+  const [reportLoading, setReportLoading] = useState<string | null>(null);
+  
+  const { success, error: showError } = useToast();
+
+  // Define table columns
+  const transactionColumns: Column<Transaction>[] = [
+    {
+      key: 'transaction_date',
+      label: 'Date',
+      sortable: true,
+      render: (value: string) => new Date(value).toLocaleDateString()
+    },
+    {
+      key: 'description',
+      label: 'Description',
+      sortable: true,
+      filterable: true
+    },
+    {
+      key: 'transaction_type',
+      label: 'Type',
+      sortable: true,
+      filterable: true,
+      render: (value: TransactionType) => (
+        <Badge className={getTransactionTypeColor(value)}>
+          {value}
+        </Badge>
+      )
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortable: true,
+      render: (value: string, row: Transaction) => (
+        <div className={`font-semibold ${
+          row.transaction_type === 'credit' ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {row.transaction_type === 'credit' ? '+' : '-'}
+          {formatCurrency(parseFloat(value))}
+        </div>
+      )
+    },
+    {
+      key: 'account_id',
+      label: 'Account',
+      sortable: true,
+      filterable: true,
+      render: (value: string) => {
+        const account = accounts.find(acc => acc.id === value);
+        return account ? account.account_name : 'Unknown';
+      }
+    }
+  ];
+
+  const accountColumns: Column<Account>[] = [
+    {
+      key: 'account_name',
+      label: 'Account Name',
+      sortable: true,
+      filterable: true
+    },
+    {
+      key: 'account_number',
+      label: 'Account Number',
+      sortable: true,
+      filterable: true
+    },
+    {
+      key: 'account_type',
+      label: 'Type',
+      sortable: true,
+      filterable: true,
+      render: (value: AccountType) => (
+        <Badge className={getAccountTypeColor(value)}>
+          {value}
+        </Badge>
+      )
+    },
+    {
+      key: 'balance',
+      label: 'Balance',
+      sortable: true,
+      render: (value: string) => formatCurrency(parseFloat(value))
+    }
+  ];
+
+  // Handle form success
+  const handleTransactionSuccess = () => {
+    setShowNewTransaction(false);
+    success('Transaction Created', 'New transaction has been created successfully.');
+    fetchDashboardData();
+  };
+
+  const handleInvoiceSuccess = () => {
+    setShowNewInvoice(false);
+    success('Invoice Created', 'New invoice has been created successfully.');
+    fetchDashboardData();
+  };
+
+  // Handle report generation
+  const handleGenerateReport = async (reportType: string) => {
+    try {
+      setReportLoading(reportType);
+      
+      // Mock report generation - replace with actual API calls
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      success('Report Generated', `${reportType} report has been generated and downloaded.`);
+    } catch (err) {
+      showError('Report Generation Failed', 'Failed to generate report. Please try again.');
+    } finally {
+      setReportLoading(null);
+    }
+  };
 
   // Fetch all dashboard data
   const fetchDashboardData = async () => {
@@ -102,6 +232,7 @@ export default function AccountingDashboard() {
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data. Please try again.');
+      showError('Failed to load dashboard data', 'Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -324,88 +455,95 @@ export default function AccountingDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchDashboardData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Transaction
-          </Button>
+          <ActionButton
+            label="Refresh"
+            icon={<RefreshCw className="h-4 w-4" />}
+            onClick={fetchDashboardData}
+            variant="outline"
+          />
+          <ActionButton
+            label="New Transaction"
+            icon={<Plus className="h-4 w-4" />}
+            onClick={() => setShowNewTransaction(true)}
+          />
+          <ActionButton
+            label="New Invoice"
+            icon={<Receipt className="h-4 w-4" />}
+            onClick={() => setShowNewInvoice(true)}
+            variant="outline"
+          />
+          <ReportDropdown
+            reports={[
+              {
+                label: 'Profit & Loss',
+                type: 'pdf',
+                onGenerate: () => handleGenerateReport('Profit & Loss'),
+                loading: reportLoading === 'Profit & Loss'
+              },
+              {
+                label: 'Balance Sheet',
+                type: 'pdf',
+                onGenerate: () => handleGenerateReport('Balance Sheet'),
+                loading: reportLoading === 'Balance Sheet'
+              },
+              {
+                label: 'Cash Flow',
+                type: 'pdf',
+                onGenerate: () => handleGenerateReport('Cash Flow'),
+                loading: reportLoading === 'Cash Flow'
+              },
+              {
+                label: 'Budget vs Actual',
+                type: 'pdf',
+                onGenerate: () => handleGenerateReport('Budget vs Actual'),
+                loading: reportLoading === 'Budget vs Actual'
+              }
+            ]}
+          />
         </div>
       </div>
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Assets */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-600/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-blue-600">Total Assets</CardTitle>
-            {metrics && getTrendIcon(metrics.assetsTrend)}
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-2xl font-bold text-blue-700">
-              {metrics ? formatCurrency(metrics.totalAssets) : '$0.00'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Current asset value
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Total Revenue */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-green-600/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-green-600">Total Revenue</CardTitle>
-            {metrics && getTrendIcon(metrics.revenueTrend)}
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-2xl font-bold text-green-700">
-              {metrics ? formatCurrency(metrics.totalRevenue) : '$0.00'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Year-to-date revenue
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Total Expenses */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-red-600">Total Expenses</CardTitle>
-            {metrics && getTrendIcon(metrics.expensesTrend)}
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="text-2xl font-bold text-red-700">
-              {metrics ? formatCurrency(metrics.totalExpenses) : '$0.00'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Year-to-date expenses
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Net Income */}
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-600/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-            <CardTitle className="text-sm font-medium text-purple-600">Net Income</CardTitle>
-            {metrics && getTrendIcon(metrics.incomeTrend)}
-          </CardHeader>
-          <CardContent className="relative">
-            <div className={`text-2xl font-bold ${
-              metrics && metrics.netIncome >= 0 ? 'text-purple-700' : 'text-red-700'
-            }`}>
-              {metrics ? formatCurrency(metrics.netIncome) : '$0.00'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Revenue minus expenses
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Total Assets"
+          value={metrics ? formatCurrency(metrics.totalAssets) : '$0.00'}
+          description="Current asset value"
+          trend={metrics?.assetsTrend}
+          icon={<Building2 className="h-4 w-4" />}
+          color="blue"
+          loading={loading}
+        />
+        
+        <MetricCard
+          title="Total Revenue"
+          value={metrics ? formatCurrency(metrics.totalRevenue) : '$0.00'}
+          description="Year-to-date revenue"
+          trend={metrics?.revenueTrend}
+          icon={<TrendingUp className="h-4 w-4" />}
+          color="green"
+          loading={loading}
+        />
+        
+        <MetricCard
+          title="Total Expenses"
+          value={metrics ? formatCurrency(metrics.totalExpenses) : '$0.00'}
+          description="Year-to-date expenses"
+          trend={metrics?.expensesTrend}
+          icon={<TrendingDown className="h-4 w-4" />}
+          color="red"
+          loading={loading}
+        />
+        
+        <MetricCard
+          title="Net Income"
+          value={metrics ? formatCurrency(metrics.netIncome) : '$0.00'}
+          description="Revenue minus expenses"
+          trend={metrics?.incomeTrend}
+          icon={<DollarSign className="h-4 w-4" />}
+          color={metrics && metrics.netIncome >= 0 ? 'green' : 'red'}
+          loading={loading}
+        />
       </div>
 
       {/* Main Content Tabs */}
@@ -467,85 +605,40 @@ export default function AccountingDashboard() {
 
         {/* Accounts Tab */}
         <TabsContent value="accounts" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Chart of Accounts</CardTitle>
-              <CardDescription>
-                All accounts with current balances
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {(accounts || []).map((account) => (
-                  <div 
-                    key={account.id} 
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{account.account_name}</span>
-                      </div>
-                      <Badge className={getAccountTypeColor(account.account_type)}>
-                        {account.account_type}
-                      </Badge>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">
-                        {formatCurrency(parseFloat(account.balance))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {account.account_number}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <DataTable
+            data={accounts}
+            columns={accountColumns}
+            searchable={true}
+            filterable={true}
+            sortable={true}
+            pagination={true}
+            pageSize={10}
+            exportable={true}
+            onExport={() => handleGenerateReport('Accounts Export')}
+            loading={loading}
+            emptyMessage="No accounts found"
+          />
         </TabsContent>
 
         {/* Transactions Tab */}
         <TabsContent value="transactions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>
-                Last 20 transactions across all accounts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {(transactions || []).map((transaction) => (
-                  <div 
-                    key={transaction.id} 
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Receipt className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{transaction.description}</span>
-                      </div>
-                      <Badge className={getTransactionTypeColor(transaction.transaction_type)}>
-                        {transaction.transaction_type}
-                      </Badge>
-                    </div>
-                    <div className="text-right">
-                      <div className={`font-semibold ${
-                        transaction.transaction_type === 'credit' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaction.transaction_type === 'credit' ? '+' : '-'}
-                        {formatCurrency(parseFloat(transaction.amount))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(transaction.transaction_date).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <DataTable
+            data={transactions}
+            columns={transactionColumns}
+            searchable={true}
+            filterable={true}
+            sortable={true}
+            pagination={true}
+            pageSize={20}
+            exportable={true}
+            onExport={() => handleGenerateReport('Transactions Export')}
+            actions={{
+              view: (transaction) => console.log('View transaction:', transaction),
+              edit: (transaction) => console.log('Edit transaction:', transaction)
+            }}
+            loading={loading}
+            emptyMessage="No transactions found"
+          />
         </TabsContent>
 
         {/* Budget vs Actual Tab */}
@@ -580,29 +673,32 @@ export default function AccountingDashboard() {
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common accounting tasks
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button className="w-full justify-start" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              New Transaction
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <Receipt className="h-4 w-4 mr-2" />
-              New Invoice
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <FileText className="h-4 w-4 mr-2" />
-              Generate Report
-            </Button>
-          </CardContent>
-        </Card>
+        <QuickActionCard
+          title="Quick Actions"
+          description="Common accounting tasks"
+          actions={[
+            {
+              label: 'New Transaction',
+              icon: <Plus className="h-4 w-4" />,
+              onClick: () => setShowNewTransaction(true)
+            },
+            {
+              label: 'New Invoice',
+              icon: <Receipt className="h-4 w-4" />,
+              onClick: () => setShowNewInvoice(true)
+            },
+            {
+              label: 'Generate P&L',
+              icon: <FileText className="h-4 w-4" />,
+              onClick: () => handleGenerateReport('Profit & Loss')
+            },
+            {
+              label: 'Generate Balance Sheet',
+              icon: <FileText className="h-4 w-4" />,
+              onClick: () => handleGenerateReport('Balance Sheet')
+            }
+          ]}
+        />
 
         {/* Recent Invoices */}
         <Card>
@@ -637,6 +733,33 @@ export default function AccountingDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modals */}
+      <Modal
+        open={showNewTransaction}
+        onOpenChange={setShowNewTransaction}
+        title="New Transaction"
+        description="Create a new accounting transaction"
+        size="lg"
+      >
+        <NewTransactionForm
+          onSuccess={handleTransactionSuccess}
+          onCancel={() => setShowNewTransaction(false)}
+        />
+      </Modal>
+
+      <Modal
+        open={showNewInvoice}
+        onOpenChange={setShowNewInvoice}
+        title="New Invoice"
+        description="Create a new invoice"
+        size="xl"
+      >
+        <NewInvoiceForm
+          onSuccess={handleInvoiceSuccess}
+          onCancel={() => setShowNewInvoice(false)}
+        />
+      </Modal>
     </div>
   );
 }

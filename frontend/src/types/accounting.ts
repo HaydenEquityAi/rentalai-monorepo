@@ -23,6 +23,7 @@ export interface Account extends BaseEntity {
   parent_account_id?: string;
   description?: string;
   is_active: boolean;
+  balance: string; // Decimal as string - current account balance
 }
 
 // Transaction interface

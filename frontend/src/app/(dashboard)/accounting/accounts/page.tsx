@@ -28,7 +28,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { accountingService } from '@/services/accounting.service';
-import { Account, AccountType } from '@/types/accounting';
+import { Account, AccountType, CreateAccountRequest, UpdateAccountRequest } from '@/types/accounting';
 
 interface AccountFormData {
   account_number: string;
@@ -110,7 +110,10 @@ export default function ChartOfAccountsPage() {
 
   // Handle filter changes
   const handleFilterChange = (key: keyof AccountFilters, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters(prev => ({ 
+      ...prev, 
+      [key]: key === 'account_type' ? (value as AccountType | 'ALL') : value 
+    }));
   };
 
   // Apply filters when they change
@@ -161,10 +164,14 @@ export default function ChartOfAccountsPage() {
 
     try {
       setSubmitting(true);
-      await accountingService.createAccount({
-        ...formData,
-        account_name: formData.name
-      });
+      const createData: CreateAccountRequest = {
+        account_number: formData.account_number,
+        account_name: formData.name,
+        account_type: formData.account_type,
+        description: formData.description || undefined,
+        is_active: formData.is_active
+      };
+      await accountingService.createAccount(createData);
       await fetchAccounts();
       setCreateDialogOpen(false);
       resetForm();
@@ -182,10 +189,14 @@ export default function ChartOfAccountsPage() {
 
     try {
       setSubmitting(true);
-      await accountingService.updateAccount(selectedAccount.id, {
-        ...formData,
-        account_name: formData.name
-      });
+      const updateData: UpdateAccountRequest = {
+        account_number: formData.account_number,
+        account_name: formData.name,
+        account_type: formData.account_type,
+        description: formData.description || undefined,
+        is_active: formData.is_active
+      };
+      await accountingService.updateAccount(selectedAccount.id, updateData);
       await fetchAccounts();
       setEditDialogOpen(false);
       setSelectedAccount(null);
@@ -518,7 +529,7 @@ export default function ChartOfAccountsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-semibold">
-                      {formatCurrency(parseFloat(account.balance))}
+                      {formatCurrency(parseFloat(account.balance || '0'))}
                     </TableCell>
                     <TableCell>
                       <Badge variant={account.is_active ? "default" : "secondary"}>

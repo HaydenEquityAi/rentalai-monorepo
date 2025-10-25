@@ -350,6 +350,49 @@ class Unit(Base):
     )
 
 
+class Tenant(Base):
+    """Tenants - people who rent units"""
+    __tablename__ = "tenants"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True)
+    
+    # Basic Info
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    phone: Mapped[str] = mapped_column(String(50), nullable=False)
+    
+    # Address
+    address: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    state: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    zip_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    
+    # Emergency Contact
+    emergency_contact_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    emergency_contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    emergency_contact_relationship: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    
+    # Status
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    organization: Mapped["Organization"] = relationship("Organization")
+    leases: Mapped[List["Lease"]] = relationship("Lease", back_populates="tenant")
+    
+    __table_args__ = (
+        Index("idx_tenant_org", "org_id"),
+        Index("idx_tenant_email", "email"),
+        Index("idx_tenant_active", "is_active"),
+    )
+
+
 class Lease(Base):
     """Lease agreements"""
     __tablename__ = "leases"
@@ -357,12 +400,7 @@ class Lease(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True)
     unit_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("units.id"), nullable=False)
-    
-    # Tenant Info
-    tenant_first_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    tenant_last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    tenant_email: Mapped[str] = mapped_column(String(255), nullable=False)
-    tenant_phone: Mapped[str] = mapped_column(String(50), nullable=False)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
     
     # Lease Terms
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -397,11 +435,13 @@ class Lease(Base):
     
     # Relationships
     unit: Mapped["Unit"] = relationship("Unit", back_populates="leases")
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="leases")
     payments: Mapped[List["Payment"]] = relationship("Payment", back_populates="lease")
     
     __table_args__ = (
         Index("idx_lease_org", "org_id"),
         Index("idx_lease_unit", "unit_id"),
+        Index("idx_lease_tenant", "tenant_id"),
         Index("idx_lease_status", "status"),
         Index("idx_lease_dates", "start_date", "end_date"),
     )
@@ -603,4 +643,20 @@ from app.models.accounting import (
     BankAccount,
     AccountType,
     TransactionType,
+)
+
+# HUD models
+from app.models.hud import (
+    TenantIncomeCertification,
+    HouseholdMember,
+    IncomeSource,
+    UtilityAllowance,
+    REACInspection,
+    CertificationType,
+    CertificationStatus,
+    RelationshipType,
+    IncomeType,
+    VerificationType,
+    InspectionType,
+    InspectionStatus,
 )

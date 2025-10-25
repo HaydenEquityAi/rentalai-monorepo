@@ -13,7 +13,7 @@ import logging
 from app.core.database import get_db
 from app.core.security import get_current_user, get_current_org
 from app.services.hud_service import HUDService
-from app.models.hud import (
+from app.models import (
     TenantIncomeCertification, HouseholdMember, IncomeSource,
     UtilityAllowance, REACInspection,
     CertificationType, CertificationStatus, RelationshipType,

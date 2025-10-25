@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 import logging
 
-from app.models.hud import (
+from app.models import (
     TenantIncomeCertification, HouseholdMember, IncomeSource,
     UtilityAllowance, REACInspection,
     CertificationType, CertificationStatus, RelationshipType,

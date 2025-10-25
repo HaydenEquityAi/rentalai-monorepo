@@ -8,7 +8,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from app.models.hud import (
+from app.models import (
     CertificationType, CertificationStatus, RelationshipType,
     IncomeType, VerificationType, InspectionType, InspectionStatus
 )

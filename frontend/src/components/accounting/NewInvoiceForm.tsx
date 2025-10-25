@@ -114,7 +114,10 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
           unit_price: item.unit_price,
           amount: item.amount
         })),
-        notes: data.notes || undefined
+        notes: data.notes || undefined,
+        invoice_number: `INV-${Date.now()}`, // Generate invoice number
+        subtotal: data.line_items.reduce((sum, item) => sum + parseFloat(item.amount || '0'), 0).toFixed(2),
+        total_amount: data.line_items.reduce((sum, item) => sum + parseFloat(item.amount || '0'), 0).toFixed(2)
       };
 
       await accountingService.createInvoice(invoiceData);

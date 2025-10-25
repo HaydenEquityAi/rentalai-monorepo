@@ -551,8 +551,8 @@ export default function HUDComplianceDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getCertificationStatusColor(cert.certification_status)}>
-                            {cert.certification_status}
+                          <Badge className={getCertificationStatusColor(cert.status)}>
+                            {cert.status}
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDate(cert.effectiveDate)}</TableCell>
@@ -574,7 +574,7 @@ export default function HUDComplianceDashboard() {
                             <Button variant="ghost" size="sm">
                               <Edit className="h-4 w-4" />
                             </Button>
-                            {cert.certification_status === 'pending' && (
+                            {cert.status === 'pending' && (
                               <Button variant="ghost" size="sm" className="text-green-600">
                                 <Send className="h-4 w-4" />
                               </Button>

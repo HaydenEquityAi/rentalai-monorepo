@@ -166,7 +166,7 @@ export default function HUDComplianceDashboard() {
       new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime()
     )[0];
     
-    const lastREACScore = lastInspection ? lastInspection.overall_score : 0;
+    const lastREACScore = lastInspection ? (lastInspection.overall_score ?? 0) : 0;
     
     const currentCerts = certs.filter(cert => {
       const expiryDate = getExpirationDate(cert.effective_date);

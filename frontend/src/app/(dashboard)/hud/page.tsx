@@ -160,7 +160,7 @@ export default function HUDComplianceDashboard() {
       return expiryDate <= thirtyDaysFromNow && expiryDate > today;
     }).length;
 
-    const pendingSubmissions = certs.filter(cert => cert.status === 'PENDING').length;
+    const pendingSubmissions = certs.filter(cert => cert.certification_status === 'pending').length;
     
     const lastInspection = insp.sort((a, b) => 
       new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime()
@@ -192,7 +192,7 @@ export default function HUDComplianceDashboard() {
     // Overdue certifications
     const overdueCerts = certs.filter(cert => {
       const expiryDate = getExpirationDate(cert.effective_date);
-      return expiryDate < today && cert.status !== 'APPROVED';
+      return expiryDate < today && cert.certification_status !== 'approved';
     });
 
     if (overdueCerts.length > 0) {
@@ -257,7 +257,7 @@ export default function HUDComplianceDashboard() {
         unit: cert.unit_number || 'N/A',
         tenant: cert.tenant_name || 'Unknown Tenant',
         type: cert.certification_type,
-        status: cert.status,
+        status: cert.certification_status,
         effectiveDate: cert.effective_date,
         expirationDate: expiryDate.toISOString(),
         daysUntilExpiry
@@ -299,12 +299,14 @@ export default function HUDComplianceDashboard() {
   // Get certification status color
   const getCertificationStatusColor = (status: CertificationStatus): string => {
     switch (status) {
-      case 'APPROVED':
+      case 'approved':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'PENDING':
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'REJECTED':
+      case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200';
+      case 'submitted':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -545,8 +547,8 @@ export default function HUDComplianceDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getCertificationStatusColor(cert.status)}>
-                            {cert.status}
+                          <Badge className={getCertificationStatusColor(cert.certification_status)}>
+                            {cert.certification_status}
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDate(cert.effectiveDate)}</TableCell>
@@ -568,7 +570,7 @@ export default function HUDComplianceDashboard() {
                             <Button variant="ghost" size="sm">
                               <Edit className="h-4 w-4" />
                             </Button>
-                            {cert.status === 'PENDING' && (
+                            {cert.certification_status === 'pending' && (
                               <Button variant="ghost" size="sm" className="text-green-600">
                                 <Send className="h-4 w-4" />
                               </Button>

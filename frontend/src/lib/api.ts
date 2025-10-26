@@ -108,6 +108,62 @@ export const propertiesAPI = {
   }
 };
 
+// Units API
+export const unitsAPI = {
+  list: async (propertyId?: string) => {
+    const url = propertyId ? `/api/v1/units/?property_id=${propertyId}` : '/api/v1/units/';
+    const response = await apiClient.get(url);
+    return response;
+  },
+  
+  get: async (id: string) => {
+    const response = await apiClient.get(`/api/v1/units/${id}`);
+    return response;
+  },
+  
+  create: async (data: any) => {
+    const response = await apiClient.post('/api/v1/units/', data);
+    return response;
+  },
+  
+  update: async (id: string, data: any) => {
+    const response = await apiClient.put(`/api/v1/units/${id}`, data);
+    return response;
+  },
+  
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/api/v1/units/${id}`);
+    return response;
+  }
+};
+
+// Tenants API (via leases)
+export const tenantsAPI = {
+  getAll: async () => {
+    // Get all leases to extract tenant info
+    const response = await apiClient.get('/api/v1/leases/');
+    const data = response.data;
+    const leases = data.items || data || [];
+    
+    // Extract unique tenants from leases
+    const tenantMap = new Map();
+    leases.forEach((lease: any) => {
+      if (lease.tenant_id && lease.tenant_name && lease.tenant_email) {
+        if (!tenantMap.has(lease.tenant_id)) {
+          tenantMap.set(lease.tenant_id, {
+            id: lease.tenant_id,
+            name: lease.tenant_name,
+            email: lease.tenant_email,
+            phone: lease.tenant_phone || ''
+          });
+        }
+      }
+    });
+    
+    return Array.from(tenantMap.values());
+  }
+};
+
 // Leads API
 export const leadsAPI = {
   list: async () => {

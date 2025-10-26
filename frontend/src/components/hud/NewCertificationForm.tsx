@@ -13,10 +13,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, AlertCircle, Users, DollarSign, Building2, Home } from 'lucide-react';
+import { CalendarIcon, AlertCircle, Users, DollarSign, Building2, Home, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { hudService } from '@/services/hud.service';
+import { tenantsAPI, propertiesAPI, unitsAPI } from '@/lib/api';
+import { toast } from 'sonner';
 import { 
   CreateTenantIncomeCertificationRequest,
   CertificationType,
@@ -54,6 +56,9 @@ export function NewCertificationForm({ onSuccess, onCancel }: NewCertificationFo
   const [properties, setProperties] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<string>('');
+  const [loadingTenants, setLoadingTenants] = useState(false);
+  const [loadingProperties, setLoadingProperties] = useState(false);
+  const [loadingUnits, setLoadingUnits] = useState(false);
 
   const {
     register,
@@ -91,33 +96,73 @@ export function NewCertificationForm({ onSuccess, onCancel }: NewCertificationFo
   }, [watchedProperty]);
 
   const loadInitialData = async () => {
+    await Promise.all([
+      loadTenants(),
+      loadProperties()
+    ]);
+  };
+
+  const loadTenants = async () => {
     try {
-      // Mock data - replace with actual API calls
-      setTenants([
-        { id: '550e8400-e29b-41d4-a716-446655440001', name: 'John Doe', email: 'john@example.com' },
-        { id: '550e8400-e29b-41d4-a716-446655440002', name: 'Jane Smith', email: 'jane@example.com' }
-      ]);
-      
-      setProperties([
-        { id: '550e8400-e29b-41d4-a716-446655440003', name: 'Sunset Apartments', address: '123 Main St' },
-        { id: '550e8400-e29b-41d4-a716-446655440004', name: 'Oak Gardens', address: '456 Oak Ave' }
-      ]);
-    } catch (err) {
-      console.error('Error loading initial data:', err);
+      setLoadingTenants(true);
+      const tenantsData = await tenantsAPI.getAll();
+      setTenants(tenantsData);
+    } catch (err: any) {
+      console.error('Error loading tenants:', err);
+      toast.error('Error loading tenants', {
+        description: err.message || 'Failed to load tenants. Please try again.',
+      });
+      setTenants([]);
+    } finally {
+      setLoadingTenants(false);
+    }
+  };
+
+  const loadProperties = async () => {
+    try {
+      setLoadingProperties(true);
+      const response = await propertiesAPI.list();
+      const propertiesData = response.data?.items || response.data || [];
+      setProperties(propertiesData.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        address: p.address || `${p.city || ''} ${p.state || ''}`.trim()
+      })));
+    } catch (err: any) {
+      console.error('Error loading properties:', err);
+      toast.error('Error loading properties', {
+        description: err.message || 'Failed to load properties. Please try again.',
+      });
+      setProperties([]);
+    } finally {
+      setLoadingProperties(false);
     }
   };
 
   const loadUnits = async (propertyId: string) => {
+    if (!propertyId) {
+      setUnits([]);
+      return;
+    }
+    
     try {
-      // Mock data - replace with actual API call
-      setUnits([
-        { id: '550e8400-e29b-41d4-a716-446655440005', number: '101', bedrooms: 1, bathrooms: 1 },
-        { id: '550e8400-e29b-41d4-a716-446655440006', number: '102', bedrooms: 2, bathrooms: 1 },
-        { id: '550e8400-e29b-41d4-a716-446655440007', number: '201', bedrooms: 1, bathrooms: 1 },
-        { id: '550e8400-e29b-41d4-a716-446655440008', number: '202', bedrooms: 2, bathrooms: 2 }
-      ]);
-    } catch (err) {
+      setLoadingUnits(true);
+      const response = await unitsAPI.list(propertyId);
+      const unitsData = response.data?.items || response.data || [];
+      setUnits(unitsData.map((u: any) => ({
+        id: u.id,
+        number: u.unit_number,
+        bedrooms: u.bedrooms,
+        bathrooms: u.bathrooms
+      })));
+    } catch (err: any) {
       console.error('Error loading units:', err);
+      toast.error('Error loading units', {
+        description: err.message || 'Failed to load units. Please try again.',
+      });
+      setUnits([]);
+    } finally {
+      setLoadingUnits(false);
     }
   };
 
@@ -167,14 +212,24 @@ export function NewCertificationForm({ onSuccess, onCancel }: NewCertificationFo
           </Label>
           <Select onValueChange={(value) => setValue('tenant_id', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select tenant" />
+              <SelectValue placeholder={loadingTenants ? "Loading..." : "Select tenant"} />
             </SelectTrigger>
             <SelectContent>
-              {tenants.map((tenant) => (
-                <SelectItem key={tenant.id} value={tenant.id}>
-                  {tenant.name} ({tenant.email})
-                </SelectItem>
-              ))}
+              {loadingTenants ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              ) : tenants.length === 0 ? (
+                <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                  No tenants available
+                </div>
+              ) : (
+                tenants.map((tenant) => (
+                  <SelectItem key={tenant.id} value={tenant.id}>
+                    {tenant.name} ({tenant.email})
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
           {errors.tenant_id && (
@@ -193,14 +248,24 @@ export function NewCertificationForm({ onSuccess, onCancel }: NewCertificationFo
             setSelectedProperty(value);
           }}>
             <SelectTrigger>
-              <SelectValue placeholder="Select property" />
+              <SelectValue placeholder={loadingProperties ? "Loading..." : "Select property"} />
             </SelectTrigger>
             <SelectContent>
-              {properties.map((property) => (
-                <SelectItem key={property.id} value={property.id}>
-                  {property.name} - {property.address}
-                </SelectItem>
-              ))}
+              {loadingProperties ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              ) : properties.length === 0 ? (
+                <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                  No properties available
+                </div>
+              ) : (
+                properties.map((property) => (
+                  <SelectItem key={property.id} value={property.id}>
+                    {property.name} - {property.address}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
           {errors.property_id && (
@@ -214,16 +279,26 @@ export function NewCertificationForm({ onSuccess, onCancel }: NewCertificationFo
             <Home className="h-4 w-4" />
             Unit *
           </Label>
-          <Select onValueChange={(value) => setValue('unit_id', value)}>
+          <Select onValueChange={(value) => setValue('unit_id', value)} disabled={!watchedProperty}>
             <SelectTrigger>
-              <SelectValue placeholder="Select unit" />
+              <SelectValue placeholder={!watchedProperty ? "Select property first" : loadingUnits ? "Loading..." : "Select unit"} />
             </SelectTrigger>
             <SelectContent>
-              {units.map((unit) => (
-                <SelectItem key={unit.id} value={unit.id}>
-                  Unit {unit.number} ({unit.bedrooms}BR/{unit.bathrooms}BA)
-                </SelectItem>
-              ))}
+              {loadingUnits ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              ) : units.length === 0 ? (
+                <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                  No units available for this property
+                </div>
+              ) : (
+                units.map((unit) => (
+                  <SelectItem key={unit.id} value={unit.id}>
+                    Unit {unit.number} ({unit.bedrooms}BR/{unit.bathrooms}BA)
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
           {errors.unit_id && (

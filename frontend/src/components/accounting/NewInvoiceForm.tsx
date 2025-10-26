@@ -84,15 +84,15 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
     try {
       // Mock data - replace with actual API calls
       setTenants([
-        { id: '1', name: 'John Doe', email: 'john@example.com', unit: '101' },
-        { id: '2', name: 'Jane Smith', email: 'jane@example.com', unit: '102' }
+        { id: '550e8400-e29b-41d4-a716-446655440001', name: 'John Doe', email: 'john@example.com', unit: '101' },
+        { id: '550e8400-e29b-41d4-a716-446655440002', name: 'Jane Smith', email: 'jane@example.com', unit: '102' }
       ]);
       
       setAccounts([
-        { id: '1', name: 'Rent Income', type: 'revenue', number: '4000' },
-        { id: '2', name: 'Late Fees', type: 'revenue', number: '4100' },
-        { id: '3', name: 'Pet Fees', type: 'revenue', number: '4200' },
-        { id: '4', name: 'Maintenance Fees', type: 'revenue', number: '4300' }
+        { id: '550e8400-e29b-41d4-a716-446655440101', name: 'Rent Income', type: 'revenue', number: '4000' },
+        { id: '550e8400-e29b-41d4-a716-446655440102', name: 'Late Fees', type: 'revenue', number: '4100' },
+        { id: '550e8400-e29b-41d4-a716-446655440103', name: 'Pet Fees', type: 'revenue', number: '4200' },
+        { id: '550e8400-e29b-41d4-a716-446655440104', name: 'Maintenance Fees', type: 'revenue', number: '4300' }
       ]);
     } catch (err) {
       console.error('Error loading initial data:', err);

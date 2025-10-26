@@ -13,10 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, AlertCircle, DollarSign, Building2, User, Receipt } from 'lucide-react';
+import { CalendarIcon, AlertCircle, DollarSign, Building2, User, Receipt, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { accountingService } from '@/services/accounting.service';
+import { toast } from 'sonner';
 import { 
   CreateTransactionRequest,
   TransactionType,
@@ -48,6 +49,8 @@ export function NewTransactionForm({ onSuccess, onCancel }: NewTransactionFormPr
   const [accounts, setAccounts] = useState<any[]>([]);
   const [vendors, setVendors] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [loadingVendors, setLoadingVendors] = useState(false);
 
   const {
     register,
@@ -71,32 +74,62 @@ export function NewTransactionForm({ onSuccess, onCancel }: NewTransactionFormPr
   }, []);
 
   const loadInitialData = async () => {
-    try {
-      // Mock data - replace with actual API calls
-      setAccounts([
-        { id: '1', name: 'Cash', type: 'asset', number: '1000' },
-        { id: '2', name: 'Accounts Receivable', type: 'asset', number: '1100' },
-        { id: '3', name: 'Rental Income', type: 'revenue', number: '4000' },
-        { id: '4', name: 'Maintenance Expenses', type: 'expense', number: '5000' }
-      ]);
-      
-      setVendors([
-        { id: '1', name: 'ABC Maintenance Co.', email: 'contact@abcmaintenance.com' },
-        { id: '2', name: 'XYZ Cleaning Services', email: 'info@xyzcleaning.com' }
-      ]);
+    await Promise.all([
+      loadAccounts(),
+      loadVendors()
+    ]);
+    
+    // Set static categories
+    setCategories([
+      'Rent Income',
+      'Maintenance',
+      'Utilities',
+      'Insurance',
+      'Legal Fees',
+      'Marketing',
+      'Office Supplies',
+      'Professional Services'
+    ]);
+  };
 
-      setCategories([
-        'Rent Income',
-        'Maintenance',
-        'Utilities',
-        'Insurance',
-        'Legal Fees',
-        'Marketing',
-        'Office Supplies',
-        'Professional Services'
-      ]);
-    } catch (err) {
-      console.error('Error loading initial data:', err);
+  const loadAccounts = async () => {
+    try {
+      setLoadingAccounts(true);
+      const accountsData = await accountingService.getAccounts();
+      setAccounts(accountsData.map((acc: any) => ({
+        id: acc.id,
+        name: acc.account_name,
+        type: acc.account_type,
+        number: acc.account_number
+      })));
+    } catch (err: any) {
+      console.error('Error loading accounts:', err);
+      toast.error('Error loading accounts', {
+        description: err.message || 'Failed to load accounts. Please try again.',
+      });
+      setAccounts([]);
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  const loadVendors = async () => {
+    try {
+      setLoadingVendors(true);
+      const vendorsData = await accountingService.getVendors();
+      setVendors(vendorsData.map((vendor: any) => ({
+        id: vendor.id,
+        name: vendor.name,
+        email: vendor.email || ''
+      })));
+    } catch (err: any) {
+      console.error('Error loading vendors:', err);
+      toast.error('Error loading vendors', {
+        description: err.message || 'Failed to load vendors. Please try again.',
+      });
+      setVendors([]);
+    } finally {
+      setLoadingVendors(false);
     }
   };
 
@@ -152,14 +185,24 @@ export function NewTransactionForm({ onSuccess, onCancel }: NewTransactionFormPr
           </Label>
           <Select onValueChange={(value) => setValue('account_id', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select account" />
+              <SelectValue placeholder={loadingAccounts ? "Loading..." : "Select account"} />
             </SelectTrigger>
             <SelectContent>
-              {accounts.map((account) => (
-                <SelectItem key={account.id} value={account.id}>
-                  {account.name} ({account.number}) - {account.type}
-                </SelectItem>
-              ))}
+              {loadingAccounts ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              ) : accounts.length === 0 ? (
+                <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                  No accounts available
+                </div>
+              ) : (
+                accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name} ({account.number}) - {account.type}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
           {errors.account_id && (
@@ -285,14 +328,24 @@ export function NewTransactionForm({ onSuccess, onCancel }: NewTransactionFormPr
           </Label>
           <Select onValueChange={(value) => setValue('vendor_id', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select vendor" />
+              <SelectValue placeholder={loadingVendors ? "Loading..." : "Select vendor"} />
             </SelectTrigger>
             <SelectContent>
-              {vendors.map((vendor) => (
-                <SelectItem key={vendor.id} value={vendor.id}>
-                  {vendor.name}
-                </SelectItem>
-              ))}
+              {loadingVendors ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              ) : vendors.length === 0 ? (
+                <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                  No vendors available
+                </div>
+              ) : (
+                vendors.map((vendor) => (
+                  <SelectItem key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>

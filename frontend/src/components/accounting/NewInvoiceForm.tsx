@@ -13,10 +13,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, AlertCircle, DollarSign, Building2, User, Receipt, Plus, Trash2 } from 'lucide-react';
+import { CalendarIcon, AlertCircle, DollarSign, Building2, User, Receipt, Plus, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { accountingService } from '@/services/accounting.service';
+import { tenantsAPI } from '@/lib/api';
+import { toast } from 'sonner';
 import { 
   CreateInvoiceRequest,
   InvoiceStatus
@@ -51,6 +53,8 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [tenants, setTenants] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
+  const [loadingTenants, setLoadingTenants] = useState(false);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
 
   const {
     register,
@@ -81,21 +85,46 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
   }, []);
 
   const loadInitialData = async () => {
+    await Promise.all([
+      loadTenants(),
+      loadAccounts()
+    ]);
+  };
+
+  const loadTenants = async () => {
     try {
-      // Mock data - replace with actual API calls
-      setTenants([
-        { id: '550e8400-e29b-41d4-a716-446655440001', name: 'John Doe', email: 'john@example.com', unit: '101' },
-        { id: '550e8400-e29b-41d4-a716-446655440002', name: 'Jane Smith', email: 'jane@example.com', unit: '102' }
-      ]);
-      
-      setAccounts([
-        { id: '550e8400-e29b-41d4-a716-446655440101', name: 'Rent Income', type: 'revenue', number: '4000' },
-        { id: '550e8400-e29b-41d4-a716-446655440102', name: 'Late Fees', type: 'revenue', number: '4100' },
-        { id: '550e8400-e29b-41d4-a716-446655440103', name: 'Pet Fees', type: 'revenue', number: '4200' },
-        { id: '550e8400-e29b-41d4-a716-446655440104', name: 'Maintenance Fees', type: 'revenue', number: '4300' }
-      ]);
-    } catch (err) {
-      console.error('Error loading initial data:', err);
+      setLoadingTenants(true);
+      const tenantsData = await tenantsAPI.getAll();
+      setTenants(tenantsData);
+    } catch (err: any) {
+      console.error('Error loading tenants:', err);
+      toast.error('Error loading tenants', {
+        description: err.message || 'Failed to load tenants. Please try again.',
+      });
+      setTenants([]);
+    } finally {
+      setLoadingTenants(false);
+    }
+  };
+
+  const loadAccounts = async () => {
+    try {
+      setLoadingAccounts(true);
+      const accountsData = await accountingService.getAccounts();
+      setAccounts(accountsData.map((acc: any) => ({
+        id: acc.id,
+        name: acc.account_name,
+        type: acc.account_type,
+        number: acc.account_number
+      })));
+    } catch (err: any) {
+      console.error('Error loading accounts:', err);
+      toast.error('Error loading accounts', {
+        description: err.message || 'Failed to load accounts. Please try again.',
+      });
+      setAccounts([]);
+    } finally {
+      setLoadingAccounts(false);
     }
   };
 
@@ -174,14 +203,24 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
           </Label>
           <Select onValueChange={(value) => setValue('tenant_id', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select tenant" />
+              <SelectValue placeholder={loadingTenants ? "Loading..." : "Select tenant"} />
             </SelectTrigger>
             <SelectContent>
-              {tenants.map((tenant) => (
-                <SelectItem key={tenant.id} value={tenant.id}>
-                  {tenant.name} - Unit {tenant.unit}
-                </SelectItem>
-              ))}
+              {loadingTenants ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              ) : tenants.length === 0 ? (
+                <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                  No tenants available
+                </div>
+              ) : (
+                tenants.map((tenant) => (
+                  <SelectItem key={tenant.id} value={tenant.id}>
+                    {tenant.name} ({tenant.email})
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
           {errors.tenant_id && (
@@ -339,14 +378,24 @@ export function NewInvoiceForm({ onSuccess, onCancel }: NewInvoiceFormProps) {
                 <Label htmlFor={`line_items.${index}.account_id`}>Account *</Label>
                 <Select onValueChange={(value) => setValue(`line_items.${index}.account_id`, value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select account" />
+                    <SelectValue placeholder={loadingAccounts ? "Loading..." : "Select account"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.name} ({account.number})
-                      </SelectItem>
-                    ))}
+                    {loadingAccounts ? (
+                      <div className="flex items-center justify-center p-4">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : accounts.length === 0 ? (
+                      <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                        No accounts available
+                      </div>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name} ({account.number})
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.line_items?.[index]?.account_id && (

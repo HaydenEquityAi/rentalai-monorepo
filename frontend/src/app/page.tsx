@@ -125,7 +125,7 @@ const pricingPlans = [
       { icon: BarChart3, text: 'Advanced analytics' },
     ],
     popular: true,
-    buttonText: 'Start Free Trial',
+    buttonText: 'Get Started',
     buttonVariant: 'default' as const,
   },
   {
@@ -492,7 +492,7 @@ export default function HomePage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg font-semibold"
                   onClick={handleStartTrial}
                 >
-                  Start Free Trial
+                  Get Started
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button 
@@ -506,7 +506,7 @@ export default function HomePage() {
               </div>
               
               <p className="text-sm text-gray-500">
-                No credit card required • 14-day free trial • Cancel anytime
+                Get started in minutes • No credit card required • Cancel anytime
               </p>
             </div>
             
@@ -894,11 +894,11 @@ export default function HomePage() {
               className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               onClick={handleStartTrial}
             >
-              Start Free Trial
+              Get Started
               <ArrowRight className="ml-3 h-6 w-6" />
             </Button>
             <p className="text-blue-100 text-sm">
-              No credit card required • 14-day free trial • Cancel anytime • Setup in 5 minutes
+              No credit card required • Setup in 5 minutes • Cancel anytime
             </p>
           </div>
           
@@ -967,7 +967,7 @@ export default function HomePage() {
             onClick={handleStartTrial}
           >
             <ArrowRight className="h-5 w-5 mr-2" />
-            Start Free Trial
+            Get Started
           </Button>
         </div>
       )}
